@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  reviews      Review[]
+  works Work[]
+  refreshTokens RefreshToken[]
+
+  emailVerified         Boolean   @default(false)
+  verificationCodeHash  String?
+  verificationExpiresAt DateTime?
+  verificationAttempts  Int       @default(0)
+
+  @@map("user")
+}
+
+model Work {
+  id          Int       @id @default(autoincrement())
+  title       String
+  type        String
+  releaseYear Int?
+  description String?
+  reviews     Review[]
+  imageUrl    String?
+
+  createdAt DateTime @default(now())
+  createdById Int
+  createdBy   User @relation(fields: [createdById], references: [id])
+
+  @@map("work")
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  workId    Int
+  work      Work     @relation(fields: [workId], references: [id], onDelete: Cascade)
+  score     Int
+  text      String?
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([workId, userId])
+  @@map("review")
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  tokenHash String   @unique
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("refresh_token")
+}

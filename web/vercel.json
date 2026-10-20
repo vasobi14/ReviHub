@@ -1,0 +1,13 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://review-project-tfph.onrender.com/:path*"
+    },
+    {
+      "source": "/uploads/:path*",
+      "destination": "https://review-project-tfph.onrender.com/uploads/:path*"
+    },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

@@ -1,0 +1,118 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import request from 'supertest';
+import app from '../src/app.js';
+import config from '../src/config/env.js';
+import { prisma } from '../src/lib/prisma.js';
+
+const uploadDir = config.uploadDir;
+
+export async function clearDatabase() {
+    await prisma.review.deleteMany();
+    await prisma.work.deleteMany();
+    await prisma.user.deleteMany();
+    try {
+        const files = await fs.readdir(uploadDir);
+        await Promise.all(
+            files
+                .filter((f) => f !== '.gitkeep')
+                .map((f) => fs.unlink(path.join(uploadDir, f))),
+        );
+    } catch {}
+}
+
+export async function createTestUser(data?: {
+    email?: string;
+    password?: string;
+    name?: string;
+    emailVerified?: boolean;
+}) {
+    const email = data?.email ?? `user${Date.now()}${Math.random()}@test.com`;
+    const password = data?.password ?? 'password123';
+    const name = data?.name ?? 'Test User';
+    const emailVerified = data?.emailVerified ?? true;
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    return prisma.user.create({
+        data: { email, passwordHash, name, emailVerified },
+    });
+}
+
+export async function deleteUser(id: number) {
+    return prisma.user.delete({ where: { id } });
+}
+
+export function createToken(userId: number): string {
+    return jwt.sign({ sub: String(userId) }, config.jwtSecret, {
+        expiresIn: '7d',
+    });
+}
+
+export async function createTestWork(data?: {
+    title?: string;
+    type?: string;
+    releaseYear?: number;
+    description?: string;
+    createdById?: number;
+}) {
+    const userId = data?.createdById ?? (await createTestUser()).id;
+
+    return prisma.work.create({
+        data: {
+            title: data?.title ?? 'Test Work',
+            type: data?.type ?? 'movie',
+            releaseYear: data?.releaseYear,
+            description: data?.description,
+            createdById: userId,
+        },
+    });
+}
+
+export async function createReview(data: {
+    workId: number;
+    userId: number;
+    score: number;
+    text?: string;
+}) {
+    return prisma.review.create({
+        data: {
+            workId: data.workId,
+            userId: data.userId,
+            score: data.score,
+            text: data.text ?? 'review text',
+        },
+    });
+}
+
+export async function authenticatedRequest(userId: number) {
+    const token = createToken(userId);
+    return {
+        get: (url: string) =>
+            request(app).get(url).set('Authorization', `Bearer ${token}`),
+        post: (url: string) =>
+            request(app).post(url).set('Authorization', `Bearer ${token}`),
+        put: (url: string) =>
+            request(app).put(url).set('Authorization', `Bearer ${token}`),
+        delete: (url: string) =>
+            request(app).delete(url).set('Authorization', `Bearer ${token}`),
+    };
+}
+
+export async function createUserWithReview() {
+    const user = await createTestUser();
+    const work = await createTestWork({ createdById: user.id });
+    const review = await prisma.review.create({
+        data: { workId: work.id, userId: user.id, score: 8, text: 'Great' },
+    });
+
+    return { user, work, review, token: createToken(user.id) };
+}
+
+export function createExpiredToken(userId: number): string {
+    return jwt.sign({ sub: String(userId) }, config.jwtSecret, {
+        expiresIn: -1,
+    });
+}

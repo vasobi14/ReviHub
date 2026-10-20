@@ -1,0 +1,50 @@
+{
+    "name": "review-api",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "start": "node dist/server.js",
+        "start:dev": "tsx watch src/server.ts",
+        "test": "vitest",
+        "test:run": "vitest run",
+        "build": "prisma generate && tsc -p tsconfig.json",
+        "db:migrate": "prisma migrate dev",
+        "db:migrate:deploy": "prisma migrate deploy",
+        "start:container": "npm run db:migrate:deploy && npm start"
+    },
+    "dependencies": {
+        "@prisma/adapter-pg": "^7.10.0",
+        "@prisma/client": "7.10.0",
+        "bcryptjs": "^3.0.0",
+        "cookie-parser": "^1.4.7",
+        "cors": "^2.8.5",
+        "dotenv": "^18.0.0",
+        "express": "^5.2.1",
+        "express-rate-limit": "^8.7.0",
+        "helmet": "^8.3.0",
+        "jsonwebtoken": "^9.0.3",
+        "multer": "^2.4.0",
+        "pg": "^8.23.1",
+        "prisma": "^7.10.0",
+        "resend": "^6.33.0",
+        "zod": "^4.6.0"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "^2.5.14",
+        "@testcontainers/postgresql": "^12.1.0",
+        "@types/cookie-parser": "^1.4.10",
+        "@types/cors": "^2.8.19",
+        "@types/express": "^5.0.6",
+        "@types/jsonwebtoken": "^9.0.3",
+        "@types/multer": "^2.2.0",
+        "@types/node": "^26.4.0",
+        "@types/pg": "^8.23.1",
+        "@types/supertest": "^7.2.1",
+        "supertest": "^7.2.2",
+        "testcontainers": "^12.1.0",
+        "tsx": "^4.23.13",
+        "typescript": "^7.0.2",
+        "vitest": "^5.0.1"
+    }
+}

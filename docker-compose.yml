@@ -1,0 +1,50 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-review_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-review_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-review_db}
+    volumes:
+      - pgdata:/var/lib/postgresql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ./api
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-review_user}:${POSTGRES_PASSWORD:-review_pass}@postgres:5432/${POSTGRES_DB:-review_db}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      CORS_ORIGIN: http://localhost:3000
+      RESEND_API_KEY: ${RESEND_API_KEY:?Set RESEND_API_KEY in .env}
+      EMAIL_FROM: ${EMAIL_FROM:?Set EMAIL_FROM in .env}
+      FRONTEND_URL: ${FRONTEND_URL:?Set FRONTEND_URL in .env}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./api/uploads:/app/uploads
+  web:
+    build:
+      context: ./web
+      target: development
+    environment:
+      VITE_API_URL: http://localhost:3001
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+
+volumes:
+  pgdata:
+  uploads:

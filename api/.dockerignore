@@ -1,0 +1,8 @@
+node_modules
+dist
+*.tsbuildinfo
+uploads 
+.env
+.env.local
+.env.*.local
+README.md
