@@ -25,7 +25,7 @@ export function Header() {
         <span className="brand-logo-window">
           <img src={reviewsLogo} alt="" />
         </span>
-        <h1 className="brand-name">Revihub</h1>
+        <h1 className="brand-name">ReviHub</h1>
       </Link>
       <div className="page-header-actions">
         <button

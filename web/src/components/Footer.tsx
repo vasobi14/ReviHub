@@ -6,12 +6,11 @@ export function Footer() {
     <footer className="site-footer">
       <div className="site-footer-inner">
         <div className="site-footer-column">
-          <span className="site-footer-brand">Revihub</span>
+          <span className="site-footer-brand">ReviHub</span>
           <span className="site-footer-muted">
-            © {new Date().getFullYear()} Revihub App
+            © {new Date().getFullYear()} ReviHub App
           </span>
         </div>
-
         <nav className="site-footer-column" aria-label="Footer navigation">
           <Link to="/privacy" className="site-footer-link">
             Privacy Policy
