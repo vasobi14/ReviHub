@@ -1,3 +1,8 @@
+# Production on the VPS, behind the host nginx (see README).
+name: review-app
+
+x-database-url: &database-url postgresql://${POSTGRES_USER:-review_user}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-review_db}
+
 services:
   postgres:
     image: postgres:18-alpine
@@ -10,50 +15,37 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
-      timeout: 5s
       retries: 10
     restart: unless-stopped
 
-  api:
-    build: ./api
+  migrate:
+    image: ghcr.io/vasobi14/revihub-migrate:${IMAGE_TAG:?Set IMAGE_TAG to a commit SHA}
     environment:
-      NODE_ENV: production
-      PORT: 3001
-      DATABASE_URL: "postgresql://${POSTGRES_USER:-review_user}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-review_db}"
-      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
-      PAGE_SIZE: ${PAGE_SIZE:-6}
-      RESEND_API_KEY: ${RESEND_API_KEY:?Set RESEND_API_KEY in .env}
-      EMAIL_FROM: ${EMAIL_FROM:?Set EMAIL_FROM in .env}
-      FRONTEND_URL: ${FRONTEND_URL:?Set FRONTEND_URL in .env}
+      DATABASE_URL: *database-url
     depends_on:
       postgres:
         condition: service_healthy
-    volumes:
-      - uploads:/app/uploads
+
+  api:
+    image: ghcr.io/vasobi14/revihub-api:${IMAGE_TAG:?Set IMAGE_TAG to a commit SHA}
+    env_file: .env
+    environment:
+      DATABASE_URL: *database-url
     ports:
       - "127.0.0.1:3001:3001"
+    volumes:
+      - uploads:/app/uploads
     healthcheck:
-      test:
-        [
-          "CMD",
-          "node",
-          "-e",
-          "fetch('http://127.0.0.1:3001/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
-        ]
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3001/health').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
       interval: 10s
-      timeout: 5s
-      retries: 5
       start_period: 20s
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   web:
-    build:
-      context: ./web
-      target: production
-    depends_on:
-      api:
-        condition: service_healthy
+    image: ghcr.io/vasobi14/revihub-web:${IMAGE_TAG:?Set IMAGE_TAG to a commit SHA}
     ports:
       - "127.0.0.1:3000:80"
     restart: unless-stopped

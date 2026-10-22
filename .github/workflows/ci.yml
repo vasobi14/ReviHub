@@ -6,11 +6,13 @@ on:
   pull_request:
     branches: ["main"]
   workflow_dispatch:
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
-  
+
 jobs:
   api:
     name: API
@@ -23,12 +25,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: api/package-lock.json
 
@@ -55,12 +57,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: web/package-lock.json
 
@@ -70,41 +72,90 @@ jobs:
       - name: Build
         run: npm run build
 
+  # Build every image once per commit. Pull requests only check that the
+  # Dockerfiles build; pushes to main publish the images tagged with the commit SHA.
+  images:
+    name: Image (${{ matrix.name }})
+    needs: [api, web]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        include:
+          - { name: api, context: api, target: runtime }
+          - { name: migrate, context: api, target: migrate }
+          - { name: web, context: web, target: production }
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GHCR
+        if: github.event_name == 'push'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ matrix.context }}
+          target: ${{ matrix.target }}
+          push: ${{ github.event_name == 'push' }}
+          tags: ghcr.io/vasobi14/revihub-${{ matrix.name }}:${{ github.sha }}
+          labels: org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,scope=${{ matrix.name }},mode=max
+
   deploy:
     name: Deploy
-    needs: [api, web]
+    needs: [images]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    environment:
+      name: production
+      url: https://vasobi.site
 
     steps:
       - name: SSH & deploy
-        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          fingerprint: ${{ secrets.VPS_HOST_FINGERPRINT }}
           command_timeout: 10m
           script: |
             set -e
             cd ~/review-app
 
-            echo "Pulling latest code..."
-            git pull origin main
+            # Compose file of exactly the commit that passed the checks above
+            git fetch origin main
+            git checkout --force ${{ github.sha }}
 
-            echo "Rebuilding and restarting containers..."
-            docker compose -f docker-compose.prod.yml up -d --build
+            # Images built by the `images` job for this commit
+            export IMAGE_TAG=${{ github.sha }}
+            docker compose -f docker-compose.prod.yml pull
 
-            echo "Waiting for API health check..."
-            for i in 1 2 3 4 5 6 7 8 9 10; do
-              if curl -fsS http://127.0.0.1:3001/health > /dev/null; then
-                echo "API is healthy"
-                exit 0
-              fi
-              echo "Attempt $i/10 failed, retrying in 3s..."
-              sleep 3
-            done
+            # --wait blocks until healthchecks pass (API: GET /health)
+            # On failure show only container status: app logs may contain user
+            # data and Actions logs are public. Read them on the server instead.
+            docker compose -f docker-compose.prod.yml up -d --wait --wait-timeout 120 || {
+              docker compose -f docker-compose.prod.yml ps -a
+              echo "Deploy failed. On the server run: docker compose -f docker-compose.prod.yml logs migrate api"
+              exit 1
+            }
 
-            echo "API did not become healthy"
-            docker compose -f docker-compose.prod.yml logs --tail=50 api
-            exit 1
+            # Remove this project's images from previous deploys (matched by the
+            # source label set in the `images` job; other images are left alone)
+            docker image prune -af --filter "label=org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}"
