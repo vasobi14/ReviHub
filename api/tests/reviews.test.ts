@@ -4,8 +4,8 @@ import app from '../src/app.js';
 import {
     clearDatabase,
     createReview,
+    createTestTitle,
     createTestUser,
-    createTestWork,
     createToken,
 } from './helpers.js';
 
@@ -16,14 +16,14 @@ describe('POST /reviews', () => {
 
     it('creates review when authenticated', async () => {
         const user = await createTestUser();
-        const work = await createTestWork();
+        const title = await createTestTitle();
         const token = createToken(user.id);
 
         const res = await request(app)
             .post('/reviews')
             .set('Authorization', `Bearer ${token}`)
             .send({
-                workId: work.id,
+                titleId: title.id,
                 score: 8,
                 text: 'Great movie',
             });
@@ -35,36 +35,36 @@ describe('POST /reviews', () => {
     });
 
     it('returns 401 without token', async () => {
-        const work = await createTestWork();
+        const title = await createTestTitle();
 
         const res = await request(app)
             .post('/reviews')
-            .send({ workId: work.id, score: 8, text: 'Great' });
+            .send({ titleId: title.id, score: 8, text: 'Great' });
 
         expect(res.status).toBe(401);
     });
 
-    it('returns 404 for non-existent work', async () => {
+    it('returns 404 for non-existent title', async () => {
         const user = await createTestUser();
         const token = createToken(user.id);
 
         const res = await request(app)
             .post('/reviews')
             .set('Authorization', `Bearer ${token}`)
-            .send({ workId: 99999, score: 8, text: 'Great' });
+            .send({ titleId: 99999, score: 8, text: 'Great' });
 
         expect(res.status).toBe(404);
     });
 
     it('returns 400 for invalid score', async () => {
         const user = await createTestUser();
-        const work = await createTestWork();
+        const title = await createTestTitle();
         const token = createToken(user.id);
 
         const res = await request(app)
             .post('/reviews')
             .set('Authorization', `Bearer ${token}`)
-            .send({ workId: work.id, score: 99, text: 'Invalid' });
+            .send({ titleId: title.id, score: 99, text: 'Invalid' });
 
         expect(res.status).toBe(400);
         expect(res.body.code).toBe('VALIDATION_ERROR');
@@ -72,7 +72,7 @@ describe('POST /reviews', () => {
 
     it('does not allow concurrent duplicate reviews', async () => {
         const user = await createTestUser();
-        const work = await createTestWork();
+        const title = await createTestTitle();
         const token = createToken(user.id);
 
         const [res1, res2] = await Promise.all([
@@ -80,7 +80,7 @@ describe('POST /reviews', () => {
                 .post('/reviews')
                 .set('Authorization', `Bearer ${token}`)
                 .send({
-                    workId: work.id,
+                    titleId: title.id,
                     score: 8,
                     text: 'Review 1',
                 }),
@@ -89,7 +89,7 @@ describe('POST /reviews', () => {
                 .post('/reviews')
                 .set('Authorization', `Bearer ${token}`)
                 .send({
-                    workId: work.id,
+                    titleId: title.id,
                     score: 9,
                     text: 'Review 2',
                 }),
@@ -98,7 +98,7 @@ describe('POST /reviews', () => {
         const statuses = [res1.status, res2.status].sort();
 
         expect(statuses[0]).toBe(201);
-        expect([400, 409]).toContain(statuses[1]);
+        expect(statuses[1]).toBe(409);
     });
 });
 
@@ -110,10 +110,10 @@ describe('DELETE /reviews/:id', () => {
     it('prevents deleting someone else review', async () => {
         const author = await createTestUser({ email: 'author@test.com' });
         const other = await createTestUser({ email: 'other@test.com' });
-        const work = await createTestWork();
+        const title = await createTestTitle();
 
         const review = await createReview({
-            workId: work.id,
+            titleId: title.id,
             userId: author.id,
             score: 8,
         });
@@ -135,10 +135,10 @@ describe('GET /reviews/:id', () => {
 
     it('returns review by id', async () => {
         const user = await createTestUser();
-        const work = await createTestWork();
+        const title = await createTestTitle();
 
         const review = await createReview({
-            workId: work.id,
+            titleId: title.id,
             userId: user.id,
             score: 8,
             text: 'Great',
@@ -174,9 +174,9 @@ describe('GET /reviews/mine', () => {
 
     it('returns the authenticated user review without pagination', async () => {
         const user = await createTestUser();
-        const work = await createTestWork();
+        const title = await createTestTitle();
         const review = await createReview({
-            workId: work.id,
+            titleId: title.id,
             userId: user.id,
             score: 8,
             text: 'My review',
@@ -184,20 +184,20 @@ describe('GET /reviews/mine', () => {
         const token = createToken(user.id);
 
         const res = await request(app)
-            .get(`/reviews/mine?workId=${work.id}`)
+            .get(`/reviews/mine?titleId=${title.id}`)
             .set('Authorization', `Bearer ${token}`);
 
         expect(res.status).toBe(200);
         expect(res.body.id).toBe(review.id);
     });
 
-    it('returns null when the user has not reviewed the work', async () => {
+    it('returns null when the user has not reviewed the title', async () => {
         const user = await createTestUser();
-        const work = await createTestWork();
+        const title = await createTestTitle();
         const token = createToken(user.id);
 
         const res = await request(app)
-            .get(`/reviews/mine?workId=${work.id}`)
+            .get(`/reviews/mine?titleId=${title.id}`)
             .set('Authorization', `Bearer ${token}`);
 
         expect(res.status).toBe(200);
@@ -205,9 +205,9 @@ describe('GET /reviews/mine', () => {
     });
 
     it('requires authentication', async () => {
-        const work = await createTestWork();
+        const title = await createTestTitle();
 
-        const res = await request(app).get(`/reviews/mine?workId=${work.id}`);
+        const res = await request(app).get(`/reviews/mine?titleId=${title.id}`);
 
         expect(res.status).toBe(401);
     });
@@ -220,10 +220,10 @@ describe('PUT /reviews/:id', () => {
 
     it('updates own review', async () => {
         const user = await createTestUser();
-        const work = await createTestWork();
+        const title = await createTestTitle();
 
         const review = await createReview({
-            workId: work.id,
+            titleId: title.id,
             userId: user.id,
             score: 5,
             text: 'Old text',
@@ -253,10 +253,10 @@ describe('PUT /reviews/:id', () => {
             email: 'other@test.com',
         });
 
-        const work = await createTestWork();
+        const title = await createTestTitle();
 
         const review = await createReview({
-            workId: work.id,
+            titleId: title.id,
             userId: author.id,
             score: 8,
         });
@@ -276,10 +276,10 @@ describe('PUT /reviews/:id', () => {
 
     it('returns 400 for invalid data', async () => {
         const user = await createTestUser();
-        const work = await createTestWork();
+        const title = await createTestTitle();
 
         const review = await createReview({
-            workId: work.id,
+            titleId: title.id,
             userId: user.id,
             score: 8,
         });
@@ -304,7 +304,7 @@ describe('GET /reviews pagination', () => {
     });
 
     it('paginates reviews using the configured page size', async () => {
-        const work = await createTestWork();
+        const title = await createTestTitle();
 
         for (let i = 0; i < 21; i++) {
             const user = await createTestUser({
@@ -312,7 +312,7 @@ describe('GET /reviews pagination', () => {
             });
 
             await createReview({
-                workId: work.id,
+                titleId: title.id,
                 userId: user.id,
                 score: 8,
                 text: `Review ${i}`,
@@ -347,37 +347,37 @@ describe('GET /reviews pagination', () => {
         expect(res.body.code).toBe('VALIDATION_ERROR');
     });
 
-    it('filters reviews by workId', async () => {
+    it('filters reviews by titleId', async () => {
         const user = await createTestUser();
-        const work1 = await createTestWork({ title: 'Work 1' });
-        const work2 = await createTestWork({ title: 'Work 2' });
+        const title1 = await createTestTitle({ name: 'Title 1' });
+        const title2 = await createTestTitle({ name: 'Title 2' });
 
-        await createReview({ workId: work1.id, userId: user.id, score: 8 });
+        await createReview({ titleId: title1.id, userId: user.id, score: 8 });
 
         const otherUser = await createTestUser();
         await createReview({
-            workId: work2.id,
+            titleId: title2.id,
             userId: otherUser.id,
             score: 5,
         });
 
-        const res = await request(app).get(`/reviews?workId=${work1.id}`);
+        const res = await request(app).get(`/reviews?titleId=${title1.id}`);
 
         expect(res.status).toBe(200);
         expect(res.body.items).toHaveLength(1);
-        expect(res.body.items[0].workId).toBe(work1.id);
+        expect(res.body.items[0].titleId).toBe(title1.id);
     });
 
     it('excludes the given user from results and total', async () => {
-        const work = await createTestWork();
+        const title = await createTestTitle();
         const me = await createTestUser({ email: 'me@test.com' });
         const other = await createTestUser({ email: 'other@test.com' });
 
-        await createReview({ workId: work.id, userId: me.id, score: 8 });
-        await createReview({ workId: work.id, userId: other.id, score: 5 });
+        await createReview({ titleId: title.id, userId: me.id, score: 8 });
+        await createReview({ titleId: title.id, userId: other.id, score: 5 });
 
         const res = await request(app).get(
-            `/reviews?workId=${work.id}&excludeUserId=${me.id}`,
+            `/reviews?titleId=${title.id}&excludeUserId=${me.id}`,
         );
 
         expect(res.status).toBe(200);

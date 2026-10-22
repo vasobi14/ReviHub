@@ -1,7 +1,7 @@
 import { type Request, Router } from 'express';
 import z from 'zod';
 import config from '../config/env.js';
-import { authMiddleware } from '../middleware/auth.js';
+import { authMiddleware, getAuthUser } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
 import {
     loginRateLimiter,
@@ -116,7 +116,7 @@ router.post('/logout', async (req, res) => {
 
 // GET /auth/me (protected)
 router.get('/me', authMiddleware, async (req: Request, res) => {
-    res.json(req.user);
+    res.json(getAuthUser(req));
 });
 
 export default router;

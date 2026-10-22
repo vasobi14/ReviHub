@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 const envSchema = z.object({
     PORT: z.coerce.number().int().positive().default(3001),
+    DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
     JWT_SECRET: z
         .string()
         .min(32, 'JWT_SECRET must be at least 32 characters long'),
@@ -15,13 +16,13 @@ const envSchema = z.object({
     PAGE_SIZE: z.coerce.number().int().positive().default(6),
     RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY is required'),
     EMAIL_FROM: z.string().min(1, 'EMAIL_FROM is required'),
-    FRONTEND_URL: z.string().url('FRONTEND_URL must be a valid URL'),
 });
 
 const env = envSchema.parse(process.env);
 
 const config = {
     port: env.PORT,
+    databaseUrl: env.DATABASE_URL,
     jwtSecret: env.JWT_SECRET,
     nodeEnv: env.NODE_ENV,
     corsOrigins: env.CORS_ORIGIN
@@ -34,7 +35,6 @@ const config = {
     pageSize: env.PAGE_SIZE,
     resendApiKey: env.RESEND_API_KEY,
     emailFrom: env.EMAIL_FROM,
-    frontendUrl: env.FRONTEND_URL,
 };
 
 export default config;

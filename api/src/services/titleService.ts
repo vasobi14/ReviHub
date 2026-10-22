@@ -1,10 +1,10 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import config from '../config/env.js';
-import type { Work as PrismaWork } from '../generated/prisma/client.js';
+import type { Title as PrismaTitle } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
 import { AppError } from '../middleware/errorHandler.js';
-import type { WorkType } from '../types/work.types.js';
+import type { TitleType } from '../types/title.types.js';
 import { logger } from '../utils/logger.js';
 
 const uploadDir = config.uploadDir;
@@ -26,32 +26,32 @@ async function cleanupImageFile(imageUrl: string | null) {
     try {
         await deleteImageFile(imageUrl);
     } catch (error) {
-        logger.warn('Failed to delete work image file', error);
+        logger.warn('Failed to delete title image file', error);
     }
 }
 
-export class WorkService {
-    async assertOwnership(workId: number, userId: number) {
-        const work = await prisma.work.findUnique({
-            where: { id: workId },
+export class TitleService {
+    async assertOwnership(titleId: number, userId: number) {
+        const title = await prisma.title.findUnique({
+            where: { id: titleId },
         });
-        if (!work) {
-            throw new AppError(404, 'Work not found', 'NOT_FOUND');
+        if (!title) {
+            throw new AppError(404, 'Title not found', 'NOT_FOUND');
         }
-        if (work.createdById !== userId) {
+        if (title.createdById !== userId) {
             throw new AppError(
                 403,
-                'Not allowed to modify this work',
+                'Not allowed to modify this title',
                 'FORBIDDEN',
             );
         }
-        return work;
+        return title;
     }
 
-    async findMany(type?: WorkType, query?: string, page: number = 1) {
+    async findMany(type?: TitleType, query?: string, page: number = 1) {
         const where: {
-            type?: WorkType;
-            title?: { contains: string; mode: 'insensitive' };
+            type?: TitleType;
+            name?: { contains: string; mode: 'insensitive' };
         } = {};
 
         if (type) {
@@ -59,7 +59,7 @@ export class WorkService {
         }
 
         if (query) {
-            where.title = {
+            where.name = {
                 contains: query,
                 mode: 'insensitive',
             };
@@ -68,7 +68,7 @@ export class WorkService {
         const skip = (page - 1) * config.pageSize;
 
         const [items, total] = await Promise.all([
-            prisma.work.findMany({
+            prisma.title.findMany({
                 where,
                 orderBy: {
                     createdAt: 'desc',
@@ -92,16 +92,16 @@ export class WorkService {
                 skip,
                 take: config.pageSize,
             }),
-            prisma.work.count({ where }),
+            prisma.title.count({ where }),
         ]);
 
-        const workIds = items.map((work) => work.id);
+        const titleIds = items.map((title) => title.id);
 
         const reviewStats = await prisma.review.groupBy({
-            by: ['workId'],
+            by: ['titleId'],
             where: {
-                workId: {
-                    in: workIds,
+                titleId: {
+                    in: titleIds,
                 },
             },
             _avg: {
@@ -112,24 +112,24 @@ export class WorkService {
             },
         });
 
-        const statsByWorkId = new Map(
-            reviewStats.map((stat) => [stat.workId, stat]),
+        const statsByTitleId = new Map(
+            reviewStats.map((stat) => [stat.titleId, stat]),
         );
 
-        const result = items.map((work) => {
-            const stats = statsByWorkId.get(work.id);
+        const result = items.map((title) => {
+            const stats = statsByTitleId.get(title.id);
             return {
-                id: work.id,
-                title: work.title,
-                type: work.type,
-                releaseYear: work.releaseYear,
-                description: work.description,
+                id: title.id,
+                name: title.name,
+                type: title.type,
+                releaseYear: title.releaseYear,
+                description: title.description,
 
                 averageRating: stats?._avg.score ?? null,
                 reviewCount: stats?._count._all ?? 0,
 
-                latestReviews: work.reviews,
-                imageUrl: work.imageUrl,
+                latestReviews: title.reviews,
+                imageUrl: title.imageUrl,
             };
         });
 
@@ -143,22 +143,22 @@ export class WorkService {
     }
 
     async findOne(id: number) {
-        const work = await prisma.work.findUnique({
+        const title = await prisma.title.findUnique({
             where: { id },
         });
 
-        if (!work) {
-            throw new AppError(404, 'Work not found', 'NOT_FOUND');
+        if (!title) {
+            throw new AppError(404, 'Title not found', 'NOT_FOUND');
         }
 
         const stats = await prisma.review.aggregate({
-            where: { workId: id },
+            where: { titleId: id },
             _avg: { score: true },
             _count: { _all: true },
         });
 
         return {
-            ...work,
+            ...title,
             averageRating: stats._avg.score ?? null,
             reviewCount: stats._count._all,
         };
@@ -166,8 +166,8 @@ export class WorkService {
 
     async create(
         data: {
-            title: string;
-            type: WorkType;
+            name: string;
+            type: TitleType;
             releaseYear?: number;
             description?: string;
         },
@@ -175,7 +175,7 @@ export class WorkService {
         imageUrl: string | null,
     ) {
         try {
-            return await prisma.work.create({
+            return await prisma.title.create({
                 data: {
                     ...data,
                     createdById: userId,
@@ -191,8 +191,8 @@ export class WorkService {
     async update(
         id: number,
         data: {
-            title: string;
-            type: WorkType;
+            name: string;
+            type: TitleType;
             releaseYear?: number;
             description?: string;
         },
@@ -200,15 +200,15 @@ export class WorkService {
         imageUrl: string | null | undefined,
         removeImage: boolean,
     ) {
-        const work = await this.assertOwnership(id, userId).catch(
+        const title = await this.assertOwnership(id, userId).catch(
             async (error) => {
                 await cleanupImageFile(imageUrl ?? null);
                 throw error;
             },
         );
 
-        let newImageUrl = work.imageUrl;
-        const oldImageUrl = work.imageUrl;
+        let newImageUrl = title.imageUrl;
+        const oldImageUrl = title.imageUrl;
 
         if (removeImage) {
             newImageUrl = null;
@@ -216,9 +216,9 @@ export class WorkService {
             newImageUrl = imageUrl;
         }
 
-        let updatedWork: PrismaWork;
+        let updatedTitle: PrismaTitle;
         try {
-            updatedWork = await prisma.work.update({
+            updatedTitle = await prisma.title.update({
                 where: { id },
                 data: {
                     ...data,
@@ -235,15 +235,15 @@ export class WorkService {
         if (oldImageUrl && oldImageUrl !== newImageUrl)
             await cleanupImageFile(oldImageUrl);
 
-        return updatedWork;
+        return updatedTitle;
     }
 
     async remove(id: number, userId: number) {
-        const work = await this.assertOwnership(id, userId);
-        const deletedWork = await prisma.work.delete({ where: { id } });
-        await cleanupImageFile(work.imageUrl);
-        return deletedWork;
+        const title = await this.assertOwnership(id, userId);
+        const deletedTitle = await prisma.title.delete({ where: { id } });
+        await cleanupImageFile(title.imageUrl);
+        return deletedTitle;
     }
 }
 
-export const workService = new WorkService();
+export const titleService = new TitleService();

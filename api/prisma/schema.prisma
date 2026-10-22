@@ -13,7 +13,7 @@ model User {
   passwordHash String
   name         String?
   reviews      Review[]
-  works Work[]
+  titles Title[]
   refreshTokens RefreshToken[]
 
   emailVerified         Boolean   @default(false)
@@ -24,9 +24,9 @@ model User {
   @@map("user")
 }
 
-model Work {
+model Title {
   id          Int       @id @default(autoincrement())
-  title       String
+  name        String
   type        String
   releaseYear Int?
   description String?
@@ -37,20 +37,20 @@ model Work {
   createdById Int
   createdBy   User @relation(fields: [createdById], references: [id])
 
-  @@map("work")
+  @@map("title")
 }
 
 model Review {
   id        Int      @id @default(autoincrement())
-  workId    Int
-  work      Work     @relation(fields: [workId], references: [id], onDelete: Cascade)
+  titleId   Int
+  title     Title    @relation(fields: [titleId], references: [id], onDelete: Cascade)
   score     Int
   text      String?
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
 
-  @@unique([workId, userId])
+  @@unique([titleId, userId])
   @@map("review")
 }
 

@@ -1,4 +1,4 @@
-// tests/works.test.ts
+// tests/titles.test.ts
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import request from 'supertest';
@@ -8,43 +8,43 @@ import config from '../src/config/env.js';
 import {
     clearDatabase,
     createReview,
+    createTestTitle,
     createTestUser,
-    createTestWork,
     createToken,
 } from './helpers.js';
 
 const uploadsDir = path.resolve('uploads-test');
 
-describe('GET /works', () => {
+describe('GET /titles', () => {
     beforeEach(async () => {
         await clearDatabase();
     });
 
-    it('returns empty array when no works exist', async () => {
-        const res = await request(app).get('/works');
+    it('returns empty array when no titles exist', async () => {
+        const res = await request(app).get('/titles');
 
         expect(res.status).toBe(200);
         expect(res.body.items).toEqual([]);
     });
 
-    it('returns list of works newest first', async () => {
-        await createTestWork({ title: 'Movie A', type: 'movie' });
+    it('returns list of titles newest first', async () => {
+        await createTestTitle({ name: 'Movie A', type: 'movie' });
         await new Promise((resolve) => setTimeout(resolve, 5));
-        await createTestWork({ title: 'Game B', type: 'game' });
+        await createTestTitle({ name: 'Game B', type: 'game' });
 
-        const res = await request(app).get('/works');
+        const res = await request(app).get('/titles');
 
         expect(res.status).toBe(200);
         expect(res.body.items).toHaveLength(2);
-        expect(res.body.items[0].title).toBe('Game B');
-        expect(res.body.items[1].title).toBe('Movie A');
+        expect(res.body.items[0].name).toBe('Game B');
+        expect(res.body.items[1].name).toBe('Movie A');
     });
 
     it('filters by type', async () => {
-        await createTestWork({ title: 'Movie A', type: 'movie' });
-        await createTestWork({ title: 'Game B', type: 'game' });
+        await createTestTitle({ name: 'Movie A', type: 'movie' });
+        await createTestTitle({ name: 'Game B', type: 'game' });
 
-        const res = await request(app).get('/works?type=movie');
+        const res = await request(app).get('/titles?type=movie');
 
         expect(res.status).toBe(200);
         expect(res.body.items).toHaveLength(1);
@@ -52,70 +52,70 @@ describe('GET /works', () => {
     });
 
     it('returns 400 for invalid type', async () => {
-        const res = await request(app).get('/works?type=banana');
+        const res = await request(app).get('/titles?type=banana');
 
         expect(res.status).toBe(400);
         expect(res.body.code).toBe('VALIDATION_ERROR');
     });
 });
 
-describe('GET /works/:id', () => {
+describe('GET /titles/:id', () => {
     beforeEach(async () => {
         await clearDatabase();
     });
 
-    it('returns work by id', async () => {
-        const work = await createTestWork({ title: 'Movie A', type: 'movie' });
+    it('returns title by id', async () => {
+        const title = await createTestTitle({ name: 'Movie A', type: 'movie' });
 
-        const res = await request(app).get(`/works/${work.id}`);
+        const res = await request(app).get(`/titles/${title.id}`);
 
         expect(res.status).toBe(200);
-        expect(res.body.id).toBe(work.id);
-        expect(res.body.title).toBe('Movie A');
+        expect(res.body.id).toBe(title.id);
+        expect(res.body.name).toBe('Movie A');
     });
 
-    it('returns 404 for non-existent work', async () => {
-        const res = await request(app).get('/works/99999');
+    it('returns 404 for non-existent title', async () => {
+        const res = await request(app).get('/titles/99999');
 
         expect(res.status).toBe(404);
         expect(res.body.code).toBe('NOT_FOUND');
     });
 
     it('returns 400 for invalid id', async () => {
-        const res = await request(app).get('/works/abc');
+        const res = await request(app).get('/titles/abc');
 
         expect(res.status).toBe(400);
     });
 });
 
-describe('POST /works', () => {
+describe('POST /titles', () => {
     beforeEach(async () => {
         await clearDatabase();
     });
 
-    it('creates work when authenticated', async () => {
+    it('creates title when authenticated', async () => {
         const user = await createTestUser();
         const token = createToken(user.id);
 
         const res = await request(app)
-            .post('/works')
+            .post('/titles')
             .set('Authorization', `Bearer ${token}`)
             .send({
-                title: 'New Movie',
+                name: 'New Movie',
                 type: 'movie',
                 releaseYear: 2024,
                 description: 'A great movie',
             });
 
         expect(res.status).toBe(201);
-        expect(res.body.title).toBe('New Movie');
+        expect(res.body.name).toBe('New Movie');
         expect(res.body.type).toBe('movie');
     });
 
     it('returns 401 without token', async () => {
         const res = await request(app)
-            .post('/works')
-            .send({ title: 'New Movie', type: 'movie' });
+            .post('/titles')
+            .send({ name: 'New Movie', type: 'movie' });
 
         expect(res.status).toBe(401);
     });
@@ -125,9 +125,9 @@ describe('POST /works', () => {
         const token = createToken(user.id);
 
         const res = await request(app)
-            .post('/works')
+            .post('/titles')
             .set('Authorization', `Bearer ${token}`)
-            .send({ title: 'A', type: 'movie' });
+            .send({ name: 'A', type: 'movie' });
 
         expect(res.status).toBe(400);
         expect(res.body.code).toBe('VALIDATION_ERROR');
@@ -138,9 +138,9 @@ describe('POST /works', () => {
         const token = createToken(user.id);
 
         const res = await request(app)
-            .post('/works')
+            .post('/titles')
             .set('Authorization', `Bearer ${token}`)
-            .field('title', 'Spoofed image')
+            .field('name', 'Spoofed image')
             .field('type', 'movie')
             .attach('image', Buffer.from('not an image'), {
                 filename: 'cover.jpg',
@@ -153,7 +153,7 @@ describe('POST /works', () => {
         expect(uploadedFiles.filter((file) => file !== '.gitkeep')).toEqual([]);
     });
 
-    it('cleans up an image when work validation fails', async () => {
+    it('cleans up an image when title validation fails', async () => {
         const user = await createTestUser();
         const token = createToken(user.id);
         const png = Buffer.from(
@@ -162,9 +162,9 @@ describe('POST /works', () => {
         );
 
         const res = await request(app)
-            .post('/works')
+            .post('/titles')
             .set('Authorization', `Bearer ${token}`)
-            .field('title', 'A')
+            .field('name', 'A')
             .field('type', 'movie')
             .attach('image', png, {
                 filename: 'poster.png',
@@ -177,66 +177,66 @@ describe('POST /works', () => {
     });
 });
 
-describe('PUT /works/:id', () => {
+describe('PUT /titles/:id', () => {
     beforeEach(async () => {
         await clearDatabase();
     });
 
-    it('updates work', async () => {
+    it('updates title', async () => {
         const user = await createTestUser();
         const token = createToken(user.id);
 
-        const work = await createTestWork({
-            title: 'Old Title',
+        const title = await createTestTitle({
+            name: 'Old Title',
             type: 'movie',
             createdById: user.id,
         });
 
         const res = await request(app)
-            .put(`/works/${work.id}`)
+            .put(`/titles/${title.id}`)
             .set('Authorization', `Bearer ${token}`)
             .send({
-                title: 'New Title',
+                name: 'New Title',
                 type: 'movie',
                 releaseYear: 2024,
                 description: 'Updated description',
             });
 
         expect(res.status).toBe(200);
-        expect(res.body.title).toBe('New Title');
+        expect(res.body.name).toBe('New Title');
         expect(res.body.releaseYear).toBe(2024);
     });
 
     it('allows clearing the description', async () => {
         const user = await createTestUser();
         const token = createToken(user.id);
-        const work = await createTestWork({
-            title: 'Work with description',
+        const title = await createTestTitle({
+            name: 'Title with description',
             type: 'movie',
             description: 'Description to clear',
             createdById: user.id,
         });
 
         const res = await request(app)
-            .put(`/works/${work.id}`)
+            .put(`/titles/${title.id}`)
             .set('Authorization', `Bearer ${token}`)
-            .field('title', work.title)
-            .field('type', work.type)
+            .field('name', title.name)
+            .field('type', title.type)
             .field('description', '');
 
         expect(res.status).toBe(200);
         expect(res.body.description).toBe('');
     });
 
-    it('returns 404 for non-existent work', async () => {
+    it('returns 404 for non-existent title', async () => {
         const user = await createTestUser();
         const token = createToken(user.id);
 
         const res = await request(app)
-            .put('/works/99999')
+            .put('/titles/99999')
             .set('Authorization', `Bearer ${token}`)
             .send({
-                title: 'New Title',
+                name: 'New Title',
                 type: 'movie',
             });
 
@@ -244,22 +244,22 @@ describe('PUT /works/:id', () => {
         expect(res.body.code).toBe('NOT_FOUND');
     });
 
-    it('returns 403 when updating someone else work', async () => {
+    it('returns 403 when updating someone else title', async () => {
         const owner = await createTestUser({ email: 'owner@test.com' });
         const other = await createTestUser({ email: 'other@test.com' });
         const otherToken = createToken(other.id);
 
-        const work = await createTestWork({
-            title: 'Owned Work',
+        const title = await createTestTitle({
+            name: 'Owned Title',
             type: 'movie',
             createdById: owner.id,
         });
 
         const res = await request(app)
-            .put(`/works/${work.id}`)
+            .put(`/titles/${title.id}`)
             .set('Authorization', `Bearer ${otherToken}`)
             .send({
-                title: 'Hacked Title',
+                name: 'Hacked Title',
                 type: 'movie',
             });
 
@@ -270,8 +270,8 @@ describe('PUT /works/:id', () => {
         const owner = await createTestUser({ email: 'image-owner@test.com' });
         const other = await createTestUser({ email: 'image-other@test.com' });
         const token = createToken(other.id);
-        const work = await createTestWork({
-            title: 'Owner work',
+        const title = await createTestTitle({
+            name: 'Owner title',
             type: 'movie',
             createdById: owner.id,
         });
@@ -281,10 +281,10 @@ describe('PUT /works/:id', () => {
         );
 
         const res = await request(app)
-            .put(`/works/${work.id}`)
+            .put(`/titles/${title.id}`)
             .set('Authorization', `Bearer ${token}`)
-            .field('title', work.title)
-            .field('type', work.type)
+            .field('name', title.name)
+            .field('type', title.type)
             .attach('image', png, {
                 filename: 'poster.png',
                 contentType: 'image/png',
@@ -296,10 +296,10 @@ describe('PUT /works/:id', () => {
     });
 
     it('returns 401 without token', async () => {
-        const work = await createTestWork();
+        const title = await createTestTitle();
 
-        const res = await request(app).put(`/works/${work.id}`).send({
-            title: 'New Title',
+        const res = await request(app).put(`/titles/${title.id}`).send({
+            name: 'New Title',
             type: 'movie',
         });
 
@@ -310,13 +310,13 @@ describe('PUT /works/:id', () => {
         const user = await createTestUser();
         const token = createToken(user.id);
 
-        const work = await createTestWork({ createdById: user.id });
+        const title = await createTestTitle({ createdById: user.id });
 
         const res = await request(app)
-            .put(`/works/${work.id}`)
+            .put(`/titles/${title.id}`)
             .set('Authorization', `Bearer ${token}`)
             .send({
-                title: 'A',
+                name: 'A',
                 type: 'movie',
             });
 
@@ -325,27 +325,27 @@ describe('PUT /works/:id', () => {
     });
 });
 
-describe('DELETE /works/:id', () => {
+describe('DELETE /titles/:id', () => {
     beforeEach(async () => {
         await clearDatabase();
     });
 
-    it('deletes own work', async () => {
+    it('deletes own title', async () => {
         const user = await createTestUser();
         const token = createToken(user.id);
-        const work = await createTestWork({ createdById: user.id });
+        const title = await createTestTitle({ createdById: user.id });
 
         const res = await request(app)
-            .delete(`/works/${work.id}`)
+            .delete(`/titles/${title.id}`)
             .set('Authorization', `Bearer ${token}`);
 
         expect(res.status).toBe(204);
 
-        const getRes = await request(app).get(`/works/${work.id}`);
+        const getRes = await request(app).get(`/titles/${title.id}`);
         expect(getRes.status).toBe(404);
     });
 
-    it('deletes the work poster file', async () => {
+    it('deletes the title poster file', async () => {
         const user = await createTestUser();
         const token = createToken(user.id);
         const png = Buffer.from(
@@ -354,9 +354,9 @@ describe('DELETE /works/:id', () => {
         );
 
         const created = await request(app)
-            .post('/works')
+            .post('/titles')
             .set('Authorization', `Bearer ${token}`)
-            .field('title', 'Work with poster')
+            .field('name', 'Title with poster')
             .field('type', 'movie')
             .attach('image', png, {
                 filename: 'poster.png',
@@ -371,33 +371,33 @@ describe('DELETE /works/:id', () => {
         await expect(fs.access(imagePath)).resolves.toBeUndefined();
 
         const deleted = await request(app)
-            .delete(`/works/${created.body.id}`)
+            .delete(`/titles/${created.body.id}`)
             .set('Authorization', `Bearer ${token}`);
 
         expect(deleted.status).toBe(204);
         await expect(fs.access(imagePath)).rejects.toThrow();
     });
 
-    it('returns 403 when deleting someone else work', async () => {
+    it('returns 403 when deleting someone else title', async () => {
         const owner = await createTestUser({ email: 'owner@test.com' });
         const other = await createTestUser({ email: 'other@test.com' });
         const otherToken = createToken(other.id);
 
-        const work = await createTestWork({ createdById: owner.id });
+        const title = await createTestTitle({ createdById: owner.id });
 
         const res = await request(app)
-            .delete(`/works/${work.id}`)
+            .delete(`/titles/${title.id}`)
             .set('Authorization', `Bearer ${otherToken}`);
 
         expect(res.status).toBe(403);
     });
 
-    it('returns 404 for non-existent work', async () => {
+    it('returns 404 for non-existent title', async () => {
         const user = await createTestUser();
         const token = createToken(user.id);
 
         const res = await request(app)
-            .delete('/works/99999')
+            .delete('/titles/99999')
             .set('Authorization', `Bearer ${token}`);
 
         expect(res.status).toBe(404);
@@ -406,9 +406,9 @@ describe('DELETE /works/:id', () => {
 
     it('returns 401 without token', async () => {
         const user = await createTestUser();
-        const work = await createTestWork({ createdById: user.id });
+        const title = await createTestTitle({ createdById: user.id });
 
-        const res = await request(app).delete(`/works/${work.id}`);
+        const res = await request(app).delete(`/titles/${title.id}`);
 
         expect(res.status).toBe(401);
     });
@@ -418,17 +418,17 @@ describe('DELETE /works/:id', () => {
         const reviewer = await createTestUser({ email: 'reviewer@test.com' });
         const token = createToken(owner.id);
 
-        const work = await createTestWork({ createdById: owner.id });
+        const title = await createTestTitle({ createdById: owner.id });
 
         const review = await createReview({
-            workId: work.id,
+            titleId: title.id,
             userId: reviewer.id,
             score: 8,
             text: 'Nice',
         });
 
         await request(app)
-            .delete(`/works/${work.id}`)
+            .delete(`/titles/${title.id}`)
             .set('Authorization', `Bearer ${token}`);
 
         const reviewRes = await request(app).get(`/reviews/${review.id}`);
@@ -436,22 +436,22 @@ describe('DELETE /works/:id', () => {
     });
 });
 
-describe('GET /works pagination', () => {
+describe('GET /titles pagination', () => {
     beforeEach(async () => {
         await clearDatabase();
     });
 
-    it('paginates works using the configured page size', async () => {
+    it('paginates titles using the configured page size', async () => {
         const pageSize = config.pageSize;
         for (let i = 0; i < pageSize * 2; i++) {
-            await createTestWork({
-                title: `Work ${String(i).padStart(2, '0')}`,
+            await createTestTitle({
+                name: `Title ${String(i).padStart(2, '0')}`,
                 type: 'movie',
             });
         }
 
-        const page1 = await request(app).get('/works?page=1');
-        const page2 = await request(app).get('/works?page=2');
+        const page1 = await request(app).get('/titles?page=1');
+        const page2 = await request(app).get('/titles?page=2');
 
         expect(page1.body.items).toHaveLength(page1.body.pageSize);
         expect(page1.body.total).toBe(
@@ -470,16 +470,16 @@ describe('GET /works pagination', () => {
         expect(page1Ids).not.toEqual(expect.arrayContaining(page2Ids));
     });
 
-    it('returns works sorted by createdAt desc', async () => {
-        await createTestWork({ title: 'First' });
+    it('returns titles sorted by createdAt desc', async () => {
+        await createTestTitle({ name: 'First' });
         await new Promise((r) => setTimeout(r, 5));
-        await createTestWork({ title: 'Second' });
+        await createTestTitle({ name: 'Second' });
         await new Promise((r) => setTimeout(r, 5));
-        await createTestWork({ title: 'Third' });
+        await createTestTitle({ name: 'Third' });
 
-        const res = await request(app).get('/works');
+        const res = await request(app).get('/titles');
 
-        expect(res.body.items.map((w: { title: string }) => w.title)).toEqual([
+        expect(res.body.items.map((w: { name: string }) => w.name)).toEqual([
             'Third',
             'Second',
             'First',

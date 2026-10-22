@@ -11,7 +11,7 @@ const uploadDir = config.uploadDir;
 
 export async function clearDatabase() {
     await prisma.review.deleteMany();
-    await prisma.work.deleteMany();
+    await prisma.title.deleteMany();
     await prisma.user.deleteMany();
     try {
         const files = await fs.readdir(uploadDir);
@@ -51,8 +51,8 @@ export function createToken(userId: number): string {
     });
 }
 
-export async function createTestWork(data?: {
-    title?: string;
+export async function createTestTitle(data?: {
+    name?: string;
     type?: string;
     releaseYear?: number;
     description?: string;
@@ -60,9 +60,9 @@ export async function createTestWork(data?: {
 }) {
     const userId = data?.createdById ?? (await createTestUser()).id;
 
-    return prisma.work.create({
+    return prisma.title.create({
         data: {
-            title: data?.title ?? 'Test Work',
+            name: data?.name ?? 'Test Title',
             type: data?.type ?? 'movie',
             releaseYear: data?.releaseYear,
             description: data?.description,
@@ -72,14 +72,14 @@ export async function createTestWork(data?: {
 }
 
 export async function createReview(data: {
-    workId: number;
+    titleId: number;
     userId: number;
     score: number;
     text?: string;
 }) {
     return prisma.review.create({
         data: {
-            workId: data.workId,
+            titleId: data.titleId,
             userId: data.userId,
             score: data.score,
             text: data.text ?? 'review text',
@@ -103,12 +103,12 @@ export async function authenticatedRequest(userId: number) {
 
 export async function createUserWithReview() {
     const user = await createTestUser();
-    const work = await createTestWork({ createdById: user.id });
+    const title = await createTestTitle({ createdById: user.id });
     const review = await prisma.review.create({
-        data: { workId: work.id, userId: user.id, score: 8, text: 'Great' },
+        data: { titleId: title.id, userId: user.id, score: 8, text: 'Great' },
     });
 
-    return { user, work, review, token: createToken(user.id) };
+    return { user, title, review, token: createToken(user.id) };
 }
 
 export function createExpiredToken(userId: number): string {

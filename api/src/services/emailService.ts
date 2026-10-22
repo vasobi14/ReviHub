@@ -14,7 +14,7 @@ export async function sendVerificationEmail(
         subject: 'Verify your email',
         html: `
             <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
-                <h2>Welcome to Revihub!</h2>
+                <h2>Welcome to ReviHub!</h2>
                 <p>Your verification code is:</p>
                 <p style="font-size: 32px; font-weight: bold; letter-spacing: 4px; padding: 16px; background: #f4f4f4; border-radius: 8px; text-align: center;">
                     ${code}

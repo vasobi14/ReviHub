@@ -27,7 +27,6 @@ export async function setup() {
     process.env.UPLOAD_DIR = 'uploads-test';
     process.env.RESEND_API_KEY = 'test-resend-key';
     process.env.EMAIL_FROM = 'Test <test@example.com>';
-    process.env.FRONTEND_URL = 'http://localhost:3000';
 
     console.log('Container started:', connectionUri);
 

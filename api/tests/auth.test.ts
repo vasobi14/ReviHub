@@ -248,6 +248,80 @@ describe('GET /auth/me', () => {
     });
 });
 
+describe('POST /auth/refresh', () => {
+    beforeEach(async () => {
+        await clearDatabase();
+    });
+
+    // Logs in and returns the refresh token cookie as "refreshToken=..."
+    async function loginCookie() {
+        await createTestUser({
+            email: 'user@test.com',
+            password: 'password123',
+        });
+        const res = await request(app)
+            .post('/auth/login')
+            .send({ email: 'user@test.com', password: 'password123' });
+        return getRefreshCookie(res);
+    }
+
+    function getRefreshCookie(res: request.Response) {
+        const cookies = res.headers['set-cookie'] as unknown as string[];
+        const cookie = cookies.find((c) => c.startsWith('refreshToken='));
+        return cookie?.split(';')[0] ?? '';
+    }
+
+    it('issues a new access token and rotates the refresh token', async () => {
+        const cookie = await loginCookie();
+
+        const res = await request(app)
+            .post('/auth/refresh')
+            .set('Cookie', cookie);
+
+        expect(res.status).toBe(200);
+        expect(typeof res.body.accessToken).toBe('string');
+        expect(getRefreshCookie(res)).not.toBe(cookie);
+    });
+
+    it('rejects a refresh token that was already used', async () => {
+        const cookie = await loginCookie();
+
+        await request(app).post('/auth/refresh').set('Cookie', cookie);
+        const res = await request(app)
+            .post('/auth/refresh')
+            .set('Cookie', cookie);
+
+        expect(res.status).toBe(401);
+        expect(res.body.code).toBe('INVALID_REFRESH_TOKEN');
+    });
+
+    it('accepts only one of two concurrent requests with the same token', async () => {
+        const cookie = await loginCookie();
+
+        const responses = await Promise.all([
+            request(app).post('/auth/refresh').set('Cookie', cookie),
+            request(app).post('/auth/refresh').set('Cookie', cookie),
+        ]);
+
+        const statuses = responses.map((res) => res.status).sort();
+        expect(statuses).toEqual([200, 401]);
+    });
+
+    it('rejects a refresh token revoked by logout', async () => {
+        const cookie = await loginCookie();
+
+        const logout = await request(app)
+            .post('/auth/logout')
+            .set('Cookie', cookie);
+        const res = await request(app)
+            .post('/auth/refresh')
+            .set('Cookie', cookie);
+
+        expect(logout.status).toBe(204);
+        expect(res.status).toBe(401);
+    });
+});
+
 describe('POST /auth/verify-email', () => {
     beforeEach(async () => {
         await clearDatabase();

@@ -2,7 +2,15 @@ import type { NextFunction, Request, Response } from 'express';
 import jwt, { type JwtPayload } from 'jsonwebtoken';
 import config from '../config/env.js';
 import { authService } from '../services/authService.js';
+import type { AuthUser } from '../types/user.types.js';
 import { AppError } from './errorHandler.js';
+
+export function getAuthUser(req: Request): AuthUser {
+    if (!req.user) {
+        throw new AppError(401, 'Not authenticated', 'UNAUTHENTICATED');
+    }
+    return req.user;
+}
 
 function getUserIdFromToken(decoded: JwtPayload): number {
     if (typeof decoded.sub !== 'string') {

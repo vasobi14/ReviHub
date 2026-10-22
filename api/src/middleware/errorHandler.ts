@@ -11,7 +11,6 @@ export class AppError extends Error {
         public statusCode: number,
         message: string,
         public code?: string,
-        public isOperational = true,
     ) {
         super(message);
         this.name = this.constructor.name;
@@ -109,18 +108,11 @@ export const errorHandler = (
         });
     }
     if (error instanceof AppError) {
-        const response: {
-            success: boolean;
-            message: string;
-            code: string | undefined;
-            errors?: Record<string, string>;
-        } = {
+        return res.status(error.statusCode).json({
             success: false,
             message: error.message,
             code: error.code,
-        };
-
-        return res.status(error.statusCode).json(response);
+        });
     }
 
     if (

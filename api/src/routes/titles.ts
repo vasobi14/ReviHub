@@ -1,17 +1,17 @@
 import { type Request, Router } from 'express';
 import z from 'zod';
-import { authMiddleware } from '../middleware/auth.js';
+import { authMiddleware, getAuthUser } from '../middleware/auth.js';
 import {
     removeUploadedFile,
     upload,
     validateImageContent,
 } from '../middleware/upload.js';
-import { workService } from '../services/workService.js';
-import { WORK_TYPES } from '../types/work.types.js';
+import { titleService } from '../services/titleService.js';
+import { TITLE_TYPES } from '../types/title.types.js';
 
-const workSchema = z.object({
-    title: z.string().max(200).min(2),
-    type: z.enum(WORK_TYPES),
+const titleSchema = z.object({
+    name: z.string().max(200).min(2),
+    type: z.enum(TITLE_TYPES),
     releaseYear: z.coerce.number().int().min(1888).max(2100).optional(),
     description: z.string().max(1000).optional(),
     removeImage: z
@@ -21,7 +21,7 @@ const workSchema = z.object({
 });
 
 const querySchema = z.object({
-    type: z.enum(WORK_TYPES).optional(),
+    type: z.enum(TITLE_TYPES).optional(),
     q: z.string().max(100).optional(),
     page: z.coerce.number().int().positive().max(1000).default(1),
 });
@@ -30,21 +30,21 @@ const paramSchema = z.coerce.number().int().positive();
 
 const router = Router();
 
-// GET /works (optionally filtered by type and search query)
+// GET /titles (optionally filtered by type and search query)
 router.get('/', async (req, res) => {
     const { type, q, page } = querySchema.parse(req.query);
-    const result = await workService.findMany(type, q, page);
+    const result = await titleService.findMany(type, q, page);
     res.json(result);
 });
 
-// GET /works/:id
+// GET /titles/:id
 router.get('/:id', async (req, res) => {
     const id = paramSchema.parse(req.params.id);
-    const work = await workService.findOne(id);
-    res.json(work);
+    const title = await titleService.findOne(id);
+    res.json(title);
 });
 
-// POST /works (protected)
+// POST /titles (protected)
 router.post(
     '/',
     authMiddleware,
@@ -52,22 +52,22 @@ router.post(
     validateImageContent,
     async (req: Request, res) => {
         try {
-            const { title, type, releaseYear, description } = workSchema.parse(
+            const { name, type, releaseYear, description } = titleSchema.parse(
                 req.body,
             );
             const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
-            const work = await workService.create(
+            const title = await titleService.create(
                 {
-                    title,
+                    name,
                     type,
                     releaseYear,
                     description,
                 },
-                req.user.id,
+                getAuthUser(req).id,
                 imageUrl,
             );
-            res.status(201).json(work);
+            res.status(201).json(title);
         } catch (error) {
             await removeUploadedFile(req.file);
             throw error;
@@ -75,7 +75,7 @@ router.post(
     },
 );
 
-// PUT /works/:id (protected)
+// PUT /titles/:id (protected)
 router.put(
     '/:id',
     authMiddleware,
@@ -84,27 +84,27 @@ router.put(
     async (req: Request, res) => {
         try {
             const id = paramSchema.parse(req.params.id);
-            const { title, type, releaseYear, description, removeImage } =
-                workSchema.parse(req.body);
+            const { name, type, releaseYear, description, removeImage } =
+                titleSchema.parse(req.body);
 
             const imageUrl = req.file
                 ? `/uploads/${req.file.filename}`
                 : undefined;
 
-            const work = await workService.update(
+            const title = await titleService.update(
                 id,
                 {
-                    title,
+                    name,
                     type,
                     releaseYear,
                     description,
                 },
-                req.user.id,
+                getAuthUser(req).id,
                 imageUrl,
                 removeImage ?? false,
             );
 
-            res.json(work);
+            res.json(title);
         } catch (error) {
             await removeUploadedFile(req.file);
             throw error;
@@ -112,10 +112,10 @@ router.put(
     },
 );
 
-//delete /works/:id (protected)
+// DELETE /titles/:id (protected)
 router.delete('/:id', authMiddleware, async (req: Request, res) => {
     const id = paramSchema.parse(req.params.id);
-    await workService.remove(id, req.user.id);
+    await titleService.remove(id, getAuthUser(req).id);
     res.status(204).send();
 });
 

@@ -1,13 +1,13 @@
 import config from '../config/env.js';
-import type { User } from '../generated/prisma/client.js';
+import { Prisma } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
 import { AppError } from '../middleware/errorHandler.js';
 
 export class ReviewService {
-    async findForUser(workId: number, userId: number) {
+    async findForUser(titleId: number, userId: number) {
         return prisma.review.findUnique({
             where: {
-                workId_userId: { workId, userId },
+                titleId_userId: { titleId, userId },
             },
             include: {
                 user: { select: { id: true, name: true } },
@@ -15,14 +15,14 @@ export class ReviewService {
         });
     }
 
-    async findMany(workId?: number, page: number = 1, excludeUserId?: number) {
+    async findMany(titleId?: number, page: number = 1, excludeUserId?: number) {
         const where: {
-            workId?: number;
+            titleId?: number;
             userId?: { not: number };
         } = {};
 
-        if (workId) {
-            where.workId = workId;
+        if (titleId) {
+            where.titleId = titleId;
         }
 
         if (excludeUserId) {
@@ -37,7 +37,7 @@ export class ReviewService {
                 orderBy: { createdAt: 'desc' },
                 include: {
                     user: { select: { id: true, name: true } },
-                    work: true,
+                    title: true,
                 },
                 skip,
                 take: config.pageSize,
@@ -68,36 +68,37 @@ export class ReviewService {
     }
 
     async create(
-        workId: number,
+        titleId: number,
         score: number,
         text: string | undefined,
-        user: User,
+        userId: number,
     ) {
-        const work = await prisma.work.findUnique({ where: { id: workId } });
-        if (!work) {
-            throw new AppError(404, 'Work not found', 'NOT_FOUND');
+        const title = await prisma.title.findUnique({ where: { id: titleId } });
+        if (!title) {
+            throw new AppError(404, 'Title not found', 'NOT_FOUND');
         }
 
-        const existing = await prisma.review.findFirst({
-            where: { workId, userId: user.id },
-        });
-
-        if (existing) {
-            throw new AppError(400, 'You have already reviewed this work');
+        try {
+            return await prisma.review.create({
+                data: { titleId, userId, score, text },
+                include: {
+                    user: { select: { id: true, name: true } },
+                    title: true,
+                },
+            });
+        } catch (error) {
+            if (
+                error instanceof Prisma.PrismaClientKnownRequestError &&
+                error.code === 'P2002'
+            ) {
+                throw new AppError(
+                    409,
+                    'You have already reviewed this title',
+                    'ALREADY_REVIEWED',
+                );
+            }
+            throw error;
         }
-
-        return prisma.review.create({
-            data: {
-                workId,
-                userId: user.id,
-                score,
-                text,
-            },
-            include: {
-                user: { select: { id: true, email: true, name: true } },
-                work: true,
-            },
-        });
     }
 
     async update(
@@ -120,7 +121,7 @@ export class ReviewService {
             where: { id },
             data: { score, text },
             include: {
-                user: { select: { id: true, email: true, name: true } },
+                user: { select: { id: true, name: true } },
             },
         });
     }

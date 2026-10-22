@@ -1,4 +1,4 @@
-import fs from 'fs/promises';
+import fs from 'node:fs/promises';
 import app from './app.js';
 import config from './config/env.js';
 import { prisma } from './lib/prisma.js';

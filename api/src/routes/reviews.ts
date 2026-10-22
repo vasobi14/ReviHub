@@ -1,22 +1,22 @@
 import { type Request, Router } from 'express';
 import z from 'zod';
-import { authMiddleware } from '../middleware/auth.js';
+import { authMiddleware, getAuthUser } from '../middleware/auth.js';
 import { reviewService } from '../services/reviewService.js';
 
 const reviewSchema = z.object({
-    workId: z.number().int().positive(),
+    titleId: z.number().int().positive(),
     score: z.coerce.number().int().min(1).max(10),
     text: z.string().max(2000).optional(),
 });
 
 const querySchema = z.object({
-    workId: z.coerce.number().int().positive().optional(),
+    titleId: z.coerce.number().int().positive().optional(),
     page: z.coerce.number().int().positive().max(100).default(1),
     excludeUserId: z.coerce.number().int().positive().optional(),
 });
 
 const mineQuerySchema = z.object({
-    workId: z.coerce.number().int().positive(),
+    titleId: z.coerce.number().int().positive(),
 });
 
 const updateReviewSchema = z.object({
@@ -28,24 +28,32 @@ const paramSchema = z.coerce.number().int().positive();
 
 const router = Router();
 
-// GET /reviews?workId=<id>&page=<number>
+// GET /reviews?titleId=<id>&page=<number>
 router.get('/', async (req, res) => {
-    const { workId, page, excludeUserId } = querySchema.parse(req.query);
-    const result = await reviewService.findMany(workId, page, excludeUserId);
+    const { titleId, page, excludeUserId } = querySchema.parse(req.query);
+    const result = await reviewService.findMany(titleId, page, excludeUserId);
     res.json(result);
 });
 
-// GET /reviews/mine?workId=<id>
+// GET /reviews/mine?titleId=<id>
 router.get('/mine', authMiddleware, async (req, res) => {
-    const { workId } = mineQuerySchema.parse(req.query);
-    const review = await reviewService.findForUser(workId, req.user.id);
+    const { titleId } = mineQuerySchema.parse(req.query);
+    const review = await reviewService.findForUser(
+        titleId,
+        getAuthUser(req).id,
+    );
     res.json(review);
 });
 
 // POST /reviews (protected)
 router.post('/', authMiddleware, async (req: Request, res) => {
-    const { workId, score, text } = reviewSchema.parse(req.body);
-    const review = await reviewService.create(workId, score, text, req.user);
+    const { titleId, score, text } = reviewSchema.parse(req.body);
+    const review = await reviewService.create(
+        titleId,
+        score,
+        text,
+        getAuthUser(req).id,
+    );
     res.status(201).json(review);
 });
 
@@ -60,14 +68,19 @@ router.get('/:id', async (req, res) => {
 router.put('/:id', authMiddleware, async (req: Request, res) => {
     const id = paramSchema.parse(req.params.id);
     const { score, text } = updateReviewSchema.parse(req.body);
-    const review = await reviewService.update(id, score, text, req.user.id);
+    const review = await reviewService.update(
+        id,
+        score,
+        text,
+        getAuthUser(req).id,
+    );
     res.json(review);
 });
 
 // DELETE /reviews/:id (protected)
 router.delete('/:id', authMiddleware, async (req: Request, res) => {
     const id = paramSchema.parse(req.params.id);
-    await reviewService.remove(id, req.user.id);
+    await reviewService.remove(id, getAuthUser(req).id);
     res.status(204).send();
 });
 

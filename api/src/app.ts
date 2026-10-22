@@ -7,16 +7,14 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import authRoutes from './routes/auth.js';
 import healthRouter from './routes/health.js';
 import reviewsRoutes from './routes/reviews.js';
-import worksRoutes from './routes/works.js';
+import titlesRoutes from './routes/titles.js';
 
 const app = express();
 
-app.use(express.json());
-app.use(cookieParser());
-app.use('/uploads', express.static(config.uploadDir));
-app.use(helmet());
-app.disable('x-powered-by');
+// One reverse proxy (nginx) in front: take the client IP from X-Forwarded-For
+app.set('trust proxy', 1);
 
+app.use(helmet());
 app.use(
     cors({
         origin: config.corsOrigins,
@@ -24,10 +22,12 @@ app.use(
         credentials: true,
     }),
 );
-app.set('trust proxy', 1);
+app.use(express.json());
+app.use(cookieParser());
+app.use('/uploads', express.static(config.uploadDir));
 
 app.use('/auth', authRoutes);
-app.use('/works', worksRoutes);
+app.use('/titles', titlesRoutes);
 app.use('/reviews', reviewsRoutes);
 app.use('/health', healthRouter);
 

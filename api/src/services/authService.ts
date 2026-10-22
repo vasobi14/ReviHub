@@ -129,22 +129,27 @@ export class AuthService {
             include: { user: true },
         });
 
+        const invalidToken = new AppError(
+            401,
+            'Invalid or expired refresh token',
+            'INVALID_REFRESH_TOKEN',
+        );
+
         if (
             !stored ||
             stored.revokedAt !== null ||
             stored.expiresAt < new Date()
         ) {
-            throw new AppError(
-                401,
-                'Invalid or expired refresh token',
-                'INVALID_REFRESH_TOKEN',
-            );
+            throw invalidToken;
         }
 
-        await prisma.refreshToken.update({
-            where: { id: stored.id },
+        const { count } = await prisma.refreshToken.updateMany({
+            where: { id: stored.id, revokedAt: null },
             data: { revokedAt: new Date() },
         });
+        if (count === 0) {
+            throw invalidToken;
+        }
 
         const accessToken = this.signAccessToken(stored.userId);
         const newRefreshToken = await this.createRefreshToken(stored.userId);
