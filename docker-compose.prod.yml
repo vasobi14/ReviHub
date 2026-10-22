@@ -29,8 +29,10 @@ services:
   api:
     image: ghcr.io/vasobi14/revihub-api:${IMAGE_TAG:?Set IMAGE_TAG to a commit SHA}
     env_file: .env
+    # Values here override .env, so a dev NODE_ENV there cannot leak into prod
     environment:
       DATABASE_URL: *database-url
+      NODE_ENV: production
     ports:
       - "127.0.0.1:3001:3001"
     volumes:
