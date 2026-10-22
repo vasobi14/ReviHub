@@ -1,4 +1,5 @@
 import { User as UserIcon } from 'lucide-react';
+import styles from './Avatar.module.css';
 
 interface AvatarProps {
   user: { id: number; name: string | null };
@@ -26,7 +27,7 @@ export default function Avatar({ user, size = 'sm' }: AvatarProps) {
 
   return (
     <div
-      className={`avatar avatar-${size}`}
+      className={`${styles.avatar} ${styles[size]}`}
       style={{ backgroundColor: bg, color: fg }}
     >
       {showLetter ? (

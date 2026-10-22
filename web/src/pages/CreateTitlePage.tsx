@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createWork } from '../api';
+import { createTitle } from '../api';
 import { Header } from '../components/Header';
 import { getErrorMessage } from '../utils/error';
+import styles from './CreateTitlePage.module.css';
 
-export default function CreateWorkPage() {
+export default function CreateTitlePage() {
   const navigate = useNavigate();
-  const [title, setTitle] = useState('');
+  const [name, setName] = useState('');
   const [type, setType] = useState('movie');
   const [releaseYear, setReleaseYear] = useState('');
   const [description, setDescription] = useState('');
@@ -29,14 +30,14 @@ export default function CreateWorkPage() {
     setSaving(true);
 
     try {
-      const work = await createWork({
-        title,
+      const title = await createTitle({
+        name,
         type,
         releaseYear: releaseYear ? Number(releaseYear) : undefined,
         description,
         image,
       });
-      navigate(`/works/${work.id}`);
+      navigate(`/titles/${title.id}`);
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -47,8 +48,8 @@ export default function CreateWorkPage() {
   return (
     <main>
       <Header />
-      <div className="create-work-page">
-        <h1>Add work</h1>
+      <div className={styles.page}>
+        <h1>Add title</h1>
         <form onSubmit={handleSubmit} className="form-stack form-wide">
           <div>
             <label>
@@ -88,8 +89,8 @@ export default function CreateWorkPage() {
               Name
               <br />
               <input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 required
                 className="full-width"
               />

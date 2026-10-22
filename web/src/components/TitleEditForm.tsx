@@ -1,21 +1,21 @@
 import { useEffect, useState } from 'react';
-import { updateWork } from '../api';
-import type { Work } from '../types';
+import { updateTitle } from '../api';
+import type { Title } from '../types';
 import { getErrorMessage } from '../utils/error';
 
-interface WorkEditFormProps {
-  work: Work;
-  onWorkEdit: () => void;
+interface TitleEditFormProps {
+  title: Title;
+  onTitleEdit: () => void;
   onCancel: () => void;
 }
 
-export default function WorkEditForm({
-  work,
-  onWorkEdit,
+export default function TitleEditForm({
+  title,
+  onTitleEdit,
   onCancel,
-}: WorkEditFormProps) {
-  const [workForm, setWorkForm] = useState({
-    title: '',
+}: TitleEditFormProps) {
+  const [titleForm, setTitleForm] = useState({
+    name: '',
     type: 'movie',
     releaseYear: '',
     description: '',
@@ -35,19 +35,19 @@ export default function WorkEditForm({
   }, [newImagePreview]);
 
   useEffect(() => {
-    if (!work) return;
-    setWorkForm({
-      title: work.title || '',
-      type: work.type || 'movie',
-      releaseYear: work.releaseYear ? String(work.releaseYear) : '',
-      description: work.description || '',
+    if (!title) return;
+    setTitleForm({
+      name: title.name || '',
+      type: title.type || 'movie',
+      releaseYear: title.releaseYear ? String(title.releaseYear) : '',
+      description: title.description || '',
     });
-  }, [work]);
+  }, [title]);
 
   const previewSrc = newImagePreview
     ? newImagePreview
-    : work.imageUrl && !removeImage
-      ? work.imageUrl
+    : title.imageUrl && !removeImage
+      ? title.imageUrl
       : null;
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,21 +70,21 @@ export default function WorkEditForm({
     setNewImagePreview(null);
   };
 
-  const handleSaveWork = async () => {
-    if (!work) return;
+  const handleSaveTitle = async () => {
+    if (!title) return;
     setSaving(true);
     try {
-      await updateWork(work.id, {
-        title: workForm.title,
-        type: workForm.type,
-        releaseYear: workForm.releaseYear
-          ? Number(workForm.releaseYear)
+      await updateTitle(title.id, {
+        name: titleForm.name,
+        type: titleForm.type,
+        releaseYear: titleForm.releaseYear
+          ? Number(titleForm.releaseYear)
           : undefined,
-        description: workForm.description,
+        description: titleForm.description,
         image: newImage,
         removeImage,
       });
-      onWorkEdit();
+      onTitleEdit();
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -95,7 +95,7 @@ export default function WorkEditForm({
   return (
     <div>
       <div>
-        <h3>Edit work</h3>
+        <h3>Edit title</h3>
         <div className="form-stack">
           <div>
             <label>
@@ -132,9 +132,9 @@ export default function WorkEditForm({
               Name
               <br />
               <input
-                value={workForm.title}
+                value={titleForm.name}
                 onChange={(e) =>
-                  setWorkForm((prev) => ({ ...prev, title: e.target.value }))
+                  setTitleForm((prev) => ({ ...prev, name: e.target.value }))
                 }
                 className="full-width"
               />
@@ -146,9 +146,9 @@ export default function WorkEditForm({
               Category
               <br />
               <select
-                value={workForm.type}
+                value={titleForm.type}
                 onChange={(e) =>
-                  setWorkForm((prev) => ({ ...prev, type: e.target.value }))
+                  setTitleForm((prev) => ({ ...prev, type: e.target.value }))
                 }
                 className="full-width"
               >
@@ -165,9 +165,9 @@ export default function WorkEditForm({
               <br />
               <input
                 type="number"
-                value={workForm.releaseYear}
+                value={titleForm.releaseYear}
                 onChange={(e) =>
-                  setWorkForm((prev) => ({
+                  setTitleForm((prev) => ({
                     ...prev,
                     releaseYear: e.target.value,
                   }))
@@ -183,9 +183,9 @@ export default function WorkEditForm({
               <br />
               <textarea
                 rows={3}
-                value={workForm.description}
+                value={titleForm.description}
                 onChange={(e) =>
-                  setWorkForm((prev) => ({
+                  setTitleForm((prev) => ({
                     ...prev,
                     description: e.target.value,
                   }))
@@ -199,7 +199,7 @@ export default function WorkEditForm({
             <button type="button" onClick={onCancel}>
               Cancel
             </button>
-            <button type="button" onClick={handleSaveWork} disabled={saving}>
+            <button type="button" onClick={handleSaveTitle} disabled={saving}>
               {saving ? 'Saving...' : 'Save'}
             </button>
             {error && <div className="error-message">{error}</div>}

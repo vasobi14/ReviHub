@@ -7,7 +7,7 @@ export interface User {
 
 export interface Review {
   id: number;
-  workId: number;
+  titleId: number;
   userId: number;
   score: number;
   text: string | null;
@@ -15,12 +15,12 @@ export interface Review {
   user: { id: number; name: string | null };
 }
 
-export type WorkType = 'movie' | 'game' | 'book';
+export type TitleType = 'movie' | 'game' | 'book';
 
-export interface Work {
+export interface Title {
   id: number;
-  title: string;
-  type: WorkType;
+  name: string;
+  type: TitleType;
   releaseYear: number | null;
   description: string | null;
   reviews: Review[];
@@ -31,7 +31,7 @@ export interface Work {
   createdAt: string;
 }
 
-export interface WorkListItem extends Omit<Work, 'reviews'> {
+export interface TitleListItem extends Omit<Title, 'reviews'> {
   latestReviews: Review[];
 }
 

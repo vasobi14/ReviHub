@@ -1,38 +1,36 @@
 import { Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import styles from './Footer.module.css';
 
 export function Footer() {
   return (
-    <footer className="site-footer">
-      <div className="site-footer-inner">
-        <div className="site-footer-column">
-          <span className="site-footer-brand">ReviHub</span>
-          <span className="site-footer-muted">
-            © {new Date().getFullYear()} ReviHub App
-          </span>
+    <footer className={styles.footer}>
+      <div className={styles.inner}>
+        <div className={styles.column}>
+          <span className={styles.brand}>ReviHub</span>
         </div>
-        <nav className="site-footer-column" aria-label="Footer navigation">
-          <Link to="/privacy" className="site-footer-link">
+        <nav className={styles.column} aria-label="Footer navigation">
+          <Link to="/privacy" className={styles.link}>
             Privacy Policy
           </Link>
-          <Link to="/cookies" className="site-footer-link">
+          <Link to="/cookies" className={styles.link}>
             Cookie Policy
           </Link>
         </nav>
 
-        <div className="site-footer-column">
+        <div className={styles.column}>
           <a
-            href="https://github.com/vasobi14/"
+            href="https://github.com/vasobi14/ReviHub/"
             target="_blank"
             rel="noreferrer noopener"
-            className="site-footer-icon"
+            className={styles.icon}
             aria-label="GitHub repository"
           >
             Github
           </a>{' '}
           <a
             href="mailto:vasobi14@gmail.com"
-            className="site-footer-icon"
+            className={styles.icon}
             aria-label="Email"
           >
             <Mail size={20} />

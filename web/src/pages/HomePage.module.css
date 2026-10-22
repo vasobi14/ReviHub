@@ -1,0 +1,87 @@
+.filters {
+  display: grid;
+  justify-items: center;
+  max-width: 100%;
+  margin: var(--space-lg) auto;
+  gap: var(--space-md);
+  background: var(--bg-filter-section);
+  padding: var(--space-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.filterButtons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-sm);
+}
+
+.filterButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-sm);
+  background: var(--filter-bg);
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.filterButton .icon {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.filterButtonActive {
+  border-color: var(--success);
+  background: var(--success);
+  color: var(--on-success);
+}
+
+.searchRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+}
+
+.searchRow .search {
+  flex: 1 1 200px;
+  min-width: 0;
+  width: auto;
+  margin-top: 0;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  color: var(--text);
+  font: inherit;
+}
+
+.search::placeholder {
+  color: var(--text-muted);
+}
+
+.count {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-accent);
+  color: var(--text-muted);
+  height: 2.5em;
+}
+
+.titleList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: var(--space-lg);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

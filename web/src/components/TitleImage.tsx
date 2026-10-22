@@ -1,4 +1,5 @@
 import { BookOpen, Film, Gamepad2 } from 'lucide-react';
+import styles from './TitleImage.module.css';
 
 interface Props {
   imageUrl: string | null;
@@ -21,19 +22,18 @@ function getTypeIcon(type: string) {
   }
 }
 
-export function WorkImage({ imageUrl, type }: Props) {
-  const apiUrl = import.meta.env.VITE_API_URL
-    ? import.meta.env.VITE_API_URL
-    : '';
-  if (imageUrl) {
-    return <img src={apiUrl + imageUrl} alt="" />;
-  }
-
+export function TitleImage({ imageUrl, type }: Props) {
   const Icon = getTypeIcon(type);
 
   return (
-    <div className="work-image-placeholder">
-      <Icon size={48} />
+    <div className={styles.frame}>
+      {imageUrl ? (
+        <img src={imageUrl} alt="" />
+      ) : (
+        <div className={styles.placeholder}>
+          <Icon size={48} />
+        </div>
+      )}
     </div>
   );
 }

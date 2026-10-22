@@ -61,10 +61,13 @@ export default function VerifyEmailPage() {
 
   if (!email) {
     return (
-      <main className="register-page">
+      <main className="auth-page">
         <div className="page-header full-width">
           <h1>Verify email</h1>
-          <button type="button" onClick={() => navigate(from, { replace: true })}>
+          <button
+            type="button"
+            onClick={() => navigate(from, { replace: true })}
+          >
             Return
           </button>
         </div>
@@ -76,7 +79,7 @@ export default function VerifyEmailPage() {
   }
 
   return (
-    <main className="register-page">
+    <main className="auth-page">
       <div className="page-header full-width">
         <h1>Verify your email</h1>
         <button type="button" onClick={() => navigate(from, { replace: true })}>

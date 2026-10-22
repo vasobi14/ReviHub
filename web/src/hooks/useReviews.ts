@@ -6,16 +6,16 @@ import type { PaginatedResponse, Review } from '../types';
 const fetcher = (url: string) => apiFetch<PaginatedResponse<Review>>(url);
 
 export function useReviews(
-  workId: number | undefined,
+  titleId: number | undefined,
   page: number,
   excludeUserId?: number
 ) {
   const query = useMemo(() => {
     const params = [`page=${page}`];
-    if (workId) params.push(`workId=${workId}`);
+    if (titleId) params.push(`titleId=${titleId}`);
     if (excludeUserId) params.push(`excludeUserId=${excludeUserId}`);
     return `/reviews?${params.join('&')}`;
-  }, [workId, page, excludeUserId]);
+  }, [titleId, page, excludeUserId]);
 
   const { data, error, mutate, isLoading } = useSWR<PaginatedResponse<Review>>(
     query,

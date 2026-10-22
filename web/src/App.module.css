@@ -1,0 +1,89 @@
+.content {
+  position: relative;
+  z-index: 1;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.content > main {
+  flex: 1;
+}
+
+.loading {
+  position: relative;
+  z-index: 1;
+  padding: var(--space-xl);
+}
+
+.ambient {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+
+.symbol {
+  position: absolute;
+  width: 128px;
+  height: 128px;
+  color: var(--ambient-base);
+  opacity: 0.075;
+}
+
+.symbol1 {
+  top: 8%;
+  left: 5%;
+  transform: rotate(-14deg);
+}
+
+.symbol2 {
+  top: 24%;
+  right: 5%;
+  width: 148px;
+  height: 148px;
+  color: var(--ambient-accent);
+  transform: rotate(12deg);
+}
+
+.symbol3 {
+  bottom: 13%;
+  left: 12%;
+  width: 142px;
+  height: 142px;
+  transform: rotate(9deg);
+}
+
+.symbol4 {
+  top: 58%;
+  right: 18%;
+  width: 90px;
+  height: 90px;
+  color: var(--ambient-accent);
+  transform: rotate(-8deg);
+}
+
+.symbol5 {
+  right: 38%;
+  bottom: 4%;
+  width: 112px;
+  height: 112px;
+}
+
+.symbol6 {
+  top: 5%;
+  right: 34%;
+  width: 68px;
+  height: 68px;
+  color: var(--ambient-accent);
+}
+
+@media (max-width: 410px) {
+  .symbol {
+    width: 82px;
+    height: 82px;
+    opacity: 0.05;
+  }
+}

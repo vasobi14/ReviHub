@@ -1,15 +1,16 @@
 import { BookOpen, Film, Gamepad2, StarIcon } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
-import type { WorkListItem } from '../types';
+import type { TitleListItem } from '../types';
 import ReviewList from './ReviewList';
-import { WorkImage } from './WorkImage';
+import styles from './TitleCard.module.css';
+import { TitleImage } from './TitleImage';
 
-interface WorkCardProps {
-  work: WorkListItem;
+interface TitleCardProps {
+  title: TitleListItem;
   onReviewsChanged: () => void;
 }
 
-export default function WorkCard({ work }: WorkCardProps) {
+export default function TitleCard({ title }: TitleCardProps) {
   const location = useLocation();
   const from = `${location.pathname}${location.search}`;
   const TYPE_ICON = {
@@ -17,42 +18,37 @@ export default function WorkCard({ work }: WorkCardProps) {
     game: Gamepad2,
     book: BookOpen,
   } as const;
-  const Icon = TYPE_ICON[work.type];
+  const Icon = TYPE_ICON[title.type];
   return (
-    <li className="work-card">
-      <h3 className="work-card-title">
-        <Link to={`/works/${work.id}`} state={{ from }}>
-          {work.title}
+    <li className={styles.card}>
+      <h3 className={styles.name}>
+        <Link to={`/titles/${title.id}`} state={{ from }}>
+          {title.name}
         </Link>
         <Icon size={20} aria-hidden="true" />
-        {work.releaseYear ? `${work.releaseYear} ` : ''}
+        {title.releaseYear ? `${title.releaseYear} ` : ''}
       </h3>
-      <div className="work-image">
-        <WorkImage imageUrl={work.imageUrl} type={work.type} />
-      </div>
-      {work.latestReviews.length !== 0 && (
-        <div className="work-meta">
+      <TitleImage imageUrl={title.imageUrl} type={title.type} />
+      {title.latestReviews.length !== 0 && (
+        <div>
           <strong>
             <span className="rating-badge">
               <StarIcon size={20} fill="gold" />{' '}
-              {work.averageRating?.toFixed(1) ?? '—'}
+              {title.averageRating?.toFixed(1) ?? '—'}
               {' by '}
-              {work.reviewCount} reviews
+              {title.reviewCount} reviews
             </span>
           </strong>
         </div>
       )}
-      <div className="work-description">{work.description}</div>
-      {work.latestReviews.length > 0 ? (
+      <div className={styles.description}>{title.description}</div>
+      {title.latestReviews.length > 0 ? (
         <>
           <h4>Latest reviews</h4>
-          <ReviewList
-            reviews={work.latestReviews}
-            className="review-list review-list-compact"
-          />
+          <ReviewList reviews={title.latestReviews} variant="compact" />
           <Link
             className="button-link"
-            to={`/works/${work.id}`}
+            to={`/titles/${title.id}`}
             state={{ from }}
           >
             Read more →
@@ -63,7 +59,7 @@ export default function WorkCard({ work }: WorkCardProps) {
           <p>No reviews yet.</p>
           <Link
             className="button-link"
-            to={`/works/${work.id}`}
+            to={`/titles/${title.id}`}
             state={{ from }}
           >
             Be the first →

@@ -1,16 +1,17 @@
 import { useMemo } from 'react';
 import useSWR from 'swr';
 import { apiFetch } from '../api';
-import type { PaginatedResponse, WorkListItem } from '../types';
+import type { PaginatedResponse, TitleListItem } from '../types';
 
-const fetcher = (url: string) => apiFetch<PaginatedResponse<WorkListItem>>(url);
+const fetcher = (url: string) =>
+  apiFetch<PaginatedResponse<TitleListItem>>(url);
 
-export function useWorks(
+export function useTitles(
   typeFilter: string,
   searchQuery: string,
   page: number
 ) {
-  const worksQuery = useMemo(() => {
+  const titlesQuery = useMemo(() => {
     const params = [`page=${page}`];
 
     if (typeFilter !== 'all') {
@@ -21,17 +22,17 @@ export function useWorks(
       params.push(`q=${encodeURIComponent(searchQuery)}`);
     }
 
-    return `/works${params.length ? `?${params.join('&')}` : ''}`;
+    return `/titles${params.length ? `?${params.join('&')}` : ''}`;
   }, [typeFilter, searchQuery, page]);
 
   const { data, error, mutate, isLoading } = useSWR<
-    PaginatedResponse<WorkListItem>
-  >(worksQuery, fetcher, {
+    PaginatedResponse<TitleListItem>
+  >(titlesQuery, fetcher, {
     keepPreviousData: true,
   });
 
   return {
-    works: data?.items ?? [],
+    titles: data?.items ?? [],
     total: data?.total ?? 0,
     totalPages: data?.totalPages ?? 0,
     currentPage: data?.page ?? page,

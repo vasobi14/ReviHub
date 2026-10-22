@@ -1,3 +1,5 @@
+import styles from './Pagination.module.css';
+
 interface PaginationProps {
   page: number;
   totalPages: number;
@@ -20,7 +22,7 @@ export function Pagination({
   const pages = getPageNumbers(page, totalPages);
 
   return (
-    <nav className="pagination">
+    <nav className={styles.pagination}>
       {pages.map((item) =>
         item.type === 'page' ? (
           <button
@@ -28,7 +30,7 @@ export function Pagination({
             key={`page-${item.value}`}
             onClick={() => onPageChange(item.value)}
             disabled={item.value === page || disabled}
-            className={item.value === page ? 'pagination-active' : undefined}
+            className={item.value === page ? styles.active : undefined}
           >
             {item.value}
           </button>

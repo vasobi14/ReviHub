@@ -3,9 +3,10 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { Pagination } from '../components/Pagination';
-import WorkCard from '../components/WorkCard';
+import TitleCard from '../components/TitleCard';
 import { useAuth } from '../context/AuthContext';
-import { useWorks } from '../hooks/useWorks';
+import { useTitles } from '../hooks/useTitles';
+import styles from './HomePage.module.css';
 
 export default function HomePage() {
   const { user } = useAuth();
@@ -72,8 +73,8 @@ export default function HomePage() {
     );
   };
 
-  const { works, total, totalPages, currentPage, error, mutate, isLoading } =
-    useWorks(typeFilter, searchQuery, page);
+  const { titles, total, totalPages, currentPage, error, mutate, isLoading } =
+    useTitles(typeFilter, searchQuery, page);
 
   const canEdit = !!user?.id;
 
@@ -82,8 +83,8 @@ export default function HomePage() {
   return (
     <main>
       <Header />
-      <section className="page-section filter-section">
-        <div className="filter-buttons">
+      <section className={`page-section ${styles.filters}`}>
+        <div className={styles.filterButtons}>
           {CATEGORIES.map((t) => {
             const ButtonIcon = t.icon;
 
@@ -92,29 +93,33 @@ export default function HomePage() {
                 key={t.value}
                 type="button"
                 onClick={() => handleTypeFilterChange(t.value)}
-                className={`filter-button ${t.value === typeFilter ? 'filter-button-active' : ''}`}
+                className={
+                  t.value === typeFilter
+                    ? `${styles.filterButton} ${styles.filterButtonActive}`
+                    : styles.filterButton
+                }
               >
-                {ButtonIcon && <ButtonIcon size={20} className="icon-class" />}
+                {ButtonIcon && <ButtonIcon size={20} className={styles.icon} />}
                 <span> {t.label}</span>
               </button>
             );
           })}
         </div>
 
-        <div className="filter-search">
+        <div className={styles.searchRow}>
           <input
             id="search"
             value={titleFilter}
             onChange={(e) => setTitleFilter(e.target.value)}
             placeholder="Search by name..."
-            className="search"
+            className={styles.search}
           />
-          <span className="filter-count">
-            Works matched filter: {total ? total : 0}{' '}
+          <span className={styles.count}>
+            Titles matched filter: {total ? total : 0}{' '}
           </span>
           {canEdit && (
-            <Link to="/works/new" className="button-link">
-              Add a new work
+            <Link to="/titles/new" className="button-link">
+              Add a new title
             </Link>
           )}
         </div>
@@ -134,20 +139,20 @@ export default function HomePage() {
 
         {!error &&
           !isLoading &&
-          works.length === 0 &&
+          titles.length === 0 &&
           (hasFilters ? (
             <p>Nothing matches your search.</p>
           ) : (
             <p>
-              No works yet.{' '}
-              {canEdit && <Link to="/works/new">Add the first one →</Link>}
+              No titles yet.{' '}
+              {canEdit && <Link to="/titles/new">Add the first one →</Link>}
             </p>
           ))}
-        <ul className="work-list">
-          {works.map((work) => (
-            <WorkCard
-              key={work.id}
-              work={work}
+        <ul className={styles.titleList}>
+          {titles.map((title) => (
+            <TitleCard
+              key={title.id}
+              title={title}
               onReviewsChanged={() => mutate()}
             />
           ))}

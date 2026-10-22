@@ -42,7 +42,7 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="register-page">
+    <main className="auth-page">
       <div className="page-header full-width">
         <h1>Login</h1>
         <button type="button" onClick={() => navigate(from, { replace: true })}>

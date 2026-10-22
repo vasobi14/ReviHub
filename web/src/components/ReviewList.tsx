@@ -1,24 +1,31 @@
 import type { Review } from '../types';
 import ReviewItem from './ReviewItem';
+import styles from './ReviewList.module.css';
 
 interface ReviewListProps {
   reviews: Review[];
   onReviewsChanged?: () => void;
-  className?: string;
+  variant?: 'grid' | 'compact' | 'single';
 }
 
 export default function ReviewList({
   reviews,
   onReviewsChanged,
-  className,
+  variant = 'grid',
 }: ReviewListProps) {
+  const className =
+    variant === 'grid' ? styles.list : `${styles.list} ${styles[variant]}`;
+
   return (
-    <ul className={className ?? 'review-list'}>
-      {reviews.map((r: Review) => {
-        return (
-          <ReviewItem key={r.id} r={r} onReviewsChanged={onReviewsChanged} />
-        );
-      })}
+    <ul className={className}>
+      {reviews.map((r: Review) => (
+        <ReviewItem
+          key={r.id}
+          r={r}
+          onReviewsChanged={onReviewsChanged}
+          embedded={variant === 'single'}
+        />
+      ))}
     </ul>
   );
 }

@@ -1,0 +1,32 @@
+.list {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-xl);
+  list-style: none;
+  padding: 0;
+}
+
+.list.compact {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.list.single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (max-width: 576px) {
+  .list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 410px) {
+  .list {
+    grid-template-columns: 1fr;
+  }
+}

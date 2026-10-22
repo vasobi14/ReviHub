@@ -13,17 +13,18 @@ import {
   Routes,
   useLocation,
 } from 'react-router-dom';
+import styles from './App.module.css';
 import { Footer } from './components/Footer';
 import { useAuth } from './context/AuthContext';
 import CookiePage from './pages/CookiePage';
-import CreateWorkPage from './pages/CreateWorkPage';
+import CreateTitlePage from './pages/CreateTitlePage';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import NotFoundPage from './pages/NotFoundPage';
 import PrivacyPage from './pages/PrivacyPage';
 import RegisterPage from './pages/RegisterPage';
+import TitlePage from './pages/TitlePage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
-import WorkPage from './pages/WorkPage';
 
 const ambientIcons = [
   { name: 'film', Icon: Film },
@@ -36,11 +37,11 @@ const ambientIcons = [
 
 function AmbientBackground() {
   return (
-    <div className="ambient-background" aria-hidden="true">
+    <div className={styles.ambient} aria-hidden="true">
       {ambientIcons.map(({ name, Icon }, index) => (
         <Icon
           key={name}
-          className={`ambient-symbol ambient-symbol-${index + 1}`}
+          className={`${styles.symbol} ${styles[`symbol${index + 1}`]}`}
           strokeWidth={1.1}
         />
       ))}
@@ -57,12 +58,12 @@ function RedirectAfterAuth() {
 export default function App() {
   const { user, authLoading } = useAuth();
 
-  if (authLoading) return <div className="loading-state">Loading...</div>;
+  if (authLoading) return <div className={styles.loading}>Loading...</div>;
 
   return (
     <BrowserRouter>
       <AmbientBackground />
-      <div className="app-content">
+      <div className={styles.content}>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route
@@ -73,10 +74,10 @@ export default function App() {
             path="/register"
             element={user ? <RedirectAfterAuth /> : <RegisterPage />}
           />
-          <Route path="/works/:id" element={<WorkPage />} />
+          <Route path="/titles/:id" element={<TitlePage />} />
           <Route
-            path="/works/new"
-            element={user ? <CreateWorkPage /> : <Navigate to="/login" />}
+            path="/titles/new"
+            element={user ? <CreateTitlePage /> : <Navigate to="/login" />}
           />
           <Route path="*" element={<NotFoundPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />

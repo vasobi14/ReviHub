@@ -1,0 +1,8 @@
+.page {
+  justify-self: center;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  width: 75%;
+  min-width: min(300px, 100%);
+}

@@ -8,13 +8,23 @@
       content="Review app for movies, games, and books"
     />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Revihub — Reviews for movies, games, books" />
+    <meta property="og:title" content="ReviHub — Reviews for movies, games, books" />
     <meta property="og:description" content="Share and read reviews on your favorite media" />
-    <meta property="og:image" content="https://vasobi.site/logo.svg" />
+    <meta property="og:image" content="https://vasobi.site/og-image.png" />
     <meta property="og:url" content="https://vasobi.site" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
-    <title>Revihub</title>
+    <title>ReviHub</title>
+    <script>
+      try {
+        const saved = localStorage.getItem('reviews-theme');
+        const system = matchMedia('(prefers-color-scheme: dark)').matches
+          ? 'dark'
+          : 'light';
+        document.documentElement.dataset.theme =
+          saved === 'dark' || saved === 'light' ? saved : system;
+      } catch {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -5,19 +5,31 @@ import { useAuth } from '../context/AuthContext';
 import type { Review } from '../types';
 import { getErrorMessage } from '../utils/error';
 import Avatar from './Avatar';
+import styles from './ReviewItem.module.css';
+import StarRating from './StarRating';
+
+const dateFormat = new Intl.DateTimeFormat('en-US', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+});
 
 interface ReviewItemProps {
   r: Review;
   onReviewsChanged?: () => void;
+  embedded?: boolean;
 }
 
-export default function ReviewItem({ r, onReviewsChanged }: ReviewItemProps) {
+export default function ReviewItem({
+  r,
+  onReviewsChanged,
+  embedded = false,
+}: ReviewItemProps) {
   const { user } = useAuth();
   const [editing, setEditing] = useState(false);
   const [editingForm, setEditingForm] = useState({ score: 5, text: '' });
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
-  const [hover, setHover] = useState(0);
 
   const canEdit = user?.id && r.user?.id === user.id;
 
@@ -56,33 +68,18 @@ export default function ReviewItem({ r, onReviewsChanged }: ReviewItemProps) {
   };
 
   return (
-    <li className="review-item">
+    <li
+      className={embedded ? `${styles.item} ${styles.embedded}` : styles.item}
+    >
       {editing ? (
-        <div className="edit-panel">
+        <div className={styles.editPanel}>
           <div className="form-stack">
-            <fieldset className="star-rating">
-              <legend>Rating</legend>
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  aria-label={`Rate ${n} out of 10`}
-                  aria-pressed={n === editingForm.score}
-                  onClick={() =>
-                    setEditingForm((prev) => ({ ...prev, score: n }))
-                  }
-                  onMouseEnter={() => setHover(n)}
-                  onMouseLeave={() => setHover(0)}
-                >
-                  <StarIcon
-                    color={n <= editingForm.score ? 'gold' : 'grey'}
-                    fill={n <= (hover || editingForm.score) ? 'gold' : ''}
-                  />
-                </button>
-              ))}
-              <br />
-              You select {editingForm.score} out of 10
-            </fieldset>
+            <StarRating
+              value={editingForm.score}
+              onChange={(score) =>
+                setEditingForm((prev) => ({ ...prev, score }))
+              }
+            />
             <div>
               <label>
                 Text
@@ -117,20 +114,29 @@ export default function ReviewItem({ r, onReviewsChanged }: ReviewItemProps) {
         </div>
       ) : (
         <>
-          <div className="review-header">
-            <div className="review-author">
+          <div className={styles.header}>
+            <div className={styles.author}>
               <Avatar user={r.user} size="sm" />
-              <span className="review-author-name">
+              <span className={styles.authorName}>
                 <Avatar user={r.user} size="sm" />{' '}
                 {r.user.name ? r.user.name : `User #${r.user.id}`}
               </span>
             </div>
 
+            <div className={styles.score}>
+              <StarIcon size={16} fill="gold" />
+              <span>{r.score}/10</span>
+            </div>
+
+            <time className={styles.date} dateTime={r.createdAt}>
+              {dateFormat.format(new Date(r.createdAt))}
+            </time>
+
             {onReviewsChanged && canEdit && (
-              <div className="inline-actions">
+              <div className={styles.actions}>
                 <button
                   type="button"
-                  className="icon-button"
+                  className={styles.iconButton}
                   onClick={handleEditReview}
                   aria-label="Edit review"
                   title="Edit review"
@@ -139,7 +145,7 @@ export default function ReviewItem({ r, onReviewsChanged }: ReviewItemProps) {
                 </button>
                 <button
                   type="button"
-                  className="icon-button"
+                  className={styles.iconButton}
                   onClick={handleDeleteReview}
                   aria-label="Delete review"
                   title="Delete review"
@@ -148,14 +154,9 @@ export default function ReviewItem({ r, onReviewsChanged }: ReviewItemProps) {
                 </button>
               </div>
             )}
-
-            <div className="review-score">
-              <StarIcon size={16} fill="gold" />
-              <span>{r.score}/10</span>
-            </div>
           </div>
 
-          {r.text && <p className="review-text">{r.text}</p>}
+          {r.text && <p className={styles.text}>{r.text}</p>}
         </>
       )}
     </li>

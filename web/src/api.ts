@@ -1,6 +1,6 @@
 import { clearAccessToken, getAccessToken, refreshAccessToken } from './auth';
 
-const API_URL = import.meta.env.VITE_API_URL ?? '/api';
+const API_URL = '/api';
 
 interface ApiError extends Error {
   status?: number;
@@ -157,15 +157,15 @@ export async function logout() {
   clearAccessToken();
 }
 
-export function createWork(data: {
-  title: string;
+export function createTitle(data: {
+  name: string;
   type: string;
   releaseYear?: number;
   description?: string;
   image?: File;
 }) {
   const formData = new FormData();
-  formData.append('title', data.title);
+  formData.append('name', data.name);
   formData.append('type', data.type);
   if (data.releaseYear !== undefined)
     formData.append('releaseYear', String(data.releaseYear));
@@ -173,13 +173,13 @@ export function createWork(data: {
     formData.append('description', data.description);
   if (data.image) formData.append('image', data.image);
 
-  return apiUpload<import('./types').Work>('/works', formData);
+  return apiUpload<import('./types').Title>('/titles', formData);
 }
 
-export function updateWork(
+export function updateTitle(
   id: number,
   data: {
-    title: string;
+    name: string;
     type: string;
     releaseYear?: number;
     description?: string;
@@ -188,7 +188,7 @@ export function updateWork(
   }
 ) {
   const formData = new FormData();
-  formData.append('title', data.title);
+  formData.append('name', data.name);
   formData.append('type', data.type);
   if (data.releaseYear !== undefined)
     formData.append('releaseYear', String(data.releaseYear));
@@ -198,19 +198,19 @@ export function updateWork(
   if (data.removeImage !== undefined)
     formData.append('removeImage', String(data.removeImage));
 
-  return apiUpload<import('./types').Work>(`/works/${id}`, formData, {
+  return apiUpload<import('./types').Title>(`/titles/${id}`, formData, {
     method: 'PUT',
   });
 }
 
-export function deleteWork(id: number) {
-  return apiFetch<void>(`/works/${id}`, { method: 'DELETE' });
+export function deleteTitle(id: number) {
+  return apiFetch<void>(`/titles/${id}`, { method: 'DELETE' });
 }
 
-export function createReview(workId: number, score: number, text: string) {
+export function createReview(titleId: number, score: number, text: string) {
   return apiFetch<import('./types').Review>('/reviews', {
     method: 'POST',
-    body: JSON.stringify({ workId, score, text }),
+    body: JSON.stringify({ titleId, score, text }),
   });
 }
 

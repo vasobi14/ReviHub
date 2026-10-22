@@ -4,43 +4,50 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import reviewsLogo from '../logo.svg';
 import Avatar from './Avatar';
+import styles from './Header.module.css';
 
 export function Header() {
   const location = useLocation();
   const { user, logout } = useAuth();
   const [theme, setTheme] = useState<'dark' | 'light'>(() =>
-    localStorage.getItem('reviews-theme') === 'dark' ? 'dark' : 'light'
+    document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'
   );
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
-    localStorage.setItem('reviews-theme', theme);
   }, [theme]);
 
   const nextTheme = theme === 'dark' ? 'light' : 'dark';
 
+  const toggleTheme = () => {
+    setTheme(nextTheme);
+    try {
+      localStorage.setItem('reviews-theme', nextTheme);
+    } catch {}
+  };
+
   return (
     <header className="page-header">
-      <Link to="/" className="brand-link">
-        <span className="brand-logo-window">
+      <Link to="/" className={styles.brandLink}>
+        <span className={styles.logoWindow}>
           <img src={reviewsLogo} alt="" />
         </span>
-        <h1 className="brand-name">ReviHub</h1>
+        <h1 className={styles.brandName}>ReviHub</h1>
       </Link>
-      <div className="page-header-actions">
+      <div className={styles.actions}>
         <button
           type="button"
-          className="theme-toggle"
+          className={styles.themeToggle}
           aria-label={`Switch to ${nextTheme} theme`}
           title={`Switch to ${nextTheme} theme`}
-          onClick={() => setTheme(nextTheme)}
+          onClick={toggleTheme}
         >
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
         {user ? (
           <>
             <Avatar user={user} size="md" />
-            <span className="user-greeting">
+            <span className={styles.greeting}>
               Hi, {user.name || `Anon #${user.id}`}
             </span>
             <button

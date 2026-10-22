@@ -32,7 +32,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="register-page">
+    <main className="auth-page">
       <div className="page-header full-width">
         <h1>Registration</h1>
         <button type="button" onClick={() => navigate(from, { replace: true })}>

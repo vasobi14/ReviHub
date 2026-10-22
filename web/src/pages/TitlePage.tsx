@@ -1,19 +1,19 @@
 import { ArrowLeft, BookOpen, Film, Gamepad2, Star } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { deleteWork } from '../api';
+import { deleteTitle } from '../api';
 import { Header } from '../components/Header';
 import { Pagination } from '../components/Pagination';
 import ReviewCreateForm from '../components/ReviewCreateForm';
-import ReviewItem from '../components/ReviewItem';
 import ReviewList from '../components/ReviewList';
-import WorkEditForm from '../components/WorkEditForm';
-import { WorkImage } from '../components/WorkImage';
+import TitleEditForm from '../components/TitleEditForm';
+import { TitleImage } from '../components/TitleImage';
 import { useAuth } from '../context/AuthContext';
 import { useMyReview } from '../hooks/useMyReview';
 import { useReviews } from '../hooks/useReviews';
-import { useWork } from '../hooks/useWork';
+import { useTitle } from '../hooks/useTitle';
 import { getErrorMessage } from '../utils/error';
+import styles from './TitlePage.module.css';
 
 const TYPE_ICON = {
   movie: Film,
@@ -21,9 +21,9 @@ const TYPE_ICON = {
   book: BookOpen,
 } as const;
 
-export default function WorkPage() {
+export default function TitlePage() {
   const [reviewsPage, setReviewsPage] = useState(1);
-  const [editingWork, setEditingWork] = useState(false);
+  const [editingTitle, setEditingTitle] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const navigate = useNavigate();
@@ -32,8 +32,8 @@ export default function WorkPage() {
     (location.state as { from?: string } | null)?.from ?? '/';
   const { user } = useAuth();
   const { id } = useParams<{ id: string }>();
-  const workId = id ? Number(id) : null;
-  const { data: work, error, mutate } = useWork(workId);
+  const titleId = id ? Number(id) : null;
+  const { data: title, error, mutate } = useTitle(titleId);
   const {
     reviews,
     total,
@@ -42,13 +42,13 @@ export default function WorkPage() {
     mutate: mutateReviews,
     isLoading: reviewsLoading,
     error: reviewsError,
-  } = useReviews(workId ?? undefined, reviewsPage, user?.id);
+  } = useReviews(titleId ?? undefined, reviewsPage, user?.id);
   const {
     data: myReview,
     error: myReviewError,
     isLoading: myReviewLoading,
     mutate: mutateMyReview,
-  } = useMyReview(workId, Boolean(user?.id));
+  } = useMyReview(titleId, Boolean(user?.id));
 
   const refreshReviews = () => {
     void mutateReviews();
@@ -56,16 +56,16 @@ export default function WorkPage() {
     void mutate();
   };
 
-  const canEdit = user?.id === work?.createdById;
+  const canEdit = user?.id === title?.createdById;
   const handleBack = () => navigate(previousLocation, { replace: true });
-  const handleDeleteWork = async () => {
-    if (!work) return;
-    if (!window.confirm('Delete this work and all its reviews?')) return;
+  const handleDeleteTitle = async () => {
+    if (!title) return;
+    if (!window.confirm('Delete this title and all its reviews?')) return;
 
     setDeleting(true);
     setDeleteError('');
     try {
-      await deleteWork(work.id);
+      await deleteTitle(title.id);
       navigate(previousLocation, { replace: true });
     } catch (err) {
       setDeleteError(getErrorMessage(err));
@@ -83,12 +83,16 @@ export default function WorkPage() {
     return (
       <main>
         <Header />
-        <button type="button" className="work-back-button" onClick={handleBack}>
+        <button
+          type="button"
+          className={styles.backButton}
+          onClick={handleBack}
+        >
           <ArrowLeft size={18} aria-hidden="true" />
-          <span>Back to works</span>
+          <span>Back to titles</span>
         </button>
         {status === 404 ? (
-          <p>Work not found.</p>
+          <p>Title not found.</p>
         ) : (
           <>
             <p>Error: {error.message}</p>
@@ -101,7 +105,7 @@ export default function WorkPage() {
     );
   }
 
-  if (!work) {
+  if (!title) {
     return (
       <main>
         <Header />
@@ -110,88 +114,86 @@ export default function WorkPage() {
     );
   }
 
-  const Icon = TYPE_ICON[work.type];
+  const Icon = TYPE_ICON[title.type];
   const canCreateReview =
     !!user?.id && !myReview && !myReviewLoading && !myReviewError;
 
   return (
     <main>
       <Header />
-      <div className="work-page">
-        <div className="work-page-button-panel">
+      <div className={styles.page}>
+        <div className={styles.buttonPanel}>
           <button
             type="button"
-            className="work-back-button"
+            className={styles.backButton}
             onClick={handleBack}
           >
             <ArrowLeft size={18} aria-hidden="true" />
-            <span>Back to works</span>
+            <span>Back to titles</span>
           </button>
           {canEdit && (
-            <div className="work-owner-actions">
-              <button type="button" onClick={() => setEditingWork(true)}>
-                Edit work
+            <div className={styles.ownerActions}>
+              <button type="button" onClick={() => setEditingTitle(true)}>
+                Edit
               </button>
               <button
                 type="button"
-                onClick={handleDeleteWork}
+                onClick={handleDeleteTitle}
                 disabled={deleting}
               >
-                {deleting ? 'Deleting...' : 'Delete work'}
+                {deleting ? 'Deleting...' : 'Delete'}
               </button>
               {deleteError && <p role="alert">{deleteError}</p>}
             </div>
           )}
         </div>
-        <div className="work-details-main">
-          {editingWork ? (
-            <WorkEditForm
-              work={work}
-              onWorkEdit={() => {
-                setEditingWork(false);
+        <div className={styles.details}>
+          {editingTitle ? (
+            <TitleEditForm
+              title={title}
+              onTitleEdit={() => {
+                setEditingTitle(false);
                 void mutate();
               }}
-              onCancel={() => setEditingWork(false)}
+              onCancel={() => setEditingTitle(false)}
             />
           ) : (
             <>
-              <div className="work-details-poster">
-                <div className="work-image">
-                  <WorkImage imageUrl={work.imageUrl} type={work.type} />
-                </div>
+              <div className={styles.poster}>
+                <TitleImage imageUrl={title.imageUrl} type={title.type} />
               </div>
 
-              <div className="work-details-info">
-                <h1 id="work-title" className="work-page-title">
-                  <span>{work.title}</span>
-                  <span className="work-page-title-type">
+              <div className={styles.info}>
+                <h1 id="title-heading" className={styles.heading}>
+                  <span>{title.name}</span>
+                  <span className={styles.type}>
                     <Icon size={24} aria-hidden="true" />
-                    {work.releaseYear && <span>{work.releaseYear}</span>}
+                    {title.releaseYear && <span>{title.releaseYear}</span>}
                   </span>
                 </h1>
 
-                <div className="work-meta-row">
+                <div className={styles.metaRow}>
                   <span className="rating-badge">
                     <Star size={16} fill="gold" />
-                    {work.averageRating !== null
-                      ? work.averageRating.toFixed(1)
+                    {title.averageRating !== null
+                      ? title.averageRating.toFixed(1)
                       : '—'}
                   </span>
                   <span>
-                    {work.reviewCount}{' '}
-                    {work.reviewCount === 1 ? 'review' : 'reviews'}
+                    {title.reviewCount}{' '}
+                    {title.reviewCount === 1 ? 'review' : 'reviews'}
                   </span>
                 </div>
 
-                {work.description && (
-                  <p className="work-description">{work.description}</p>
+                {title.description && (
+                  <p className={styles.description}>{title.description}</p>
                 )}
               </div>
             </>
           )}
 
           {!user && (
-            <div className="my-review-card">
+            <div className={styles.myReview}>
               <p>
                 <Link to="/login" state={{ from: location.pathname }}>
                   Login
@@ -206,9 +208,9 @@ export default function WorkPage() {
           )}
 
           {user && myReviewError && (
-            <div className="my-review-card">
+            <div className={styles.myReview}>
               <p role="alert">
-                Could not check whether you have reviewed this work.{' '}
+                Could not check whether you have reviewed this title.{' '}
                 <button type="button" onClick={() => void mutateMyReview()}>
                   Retry
                 </button>
@@ -217,30 +219,32 @@ export default function WorkPage() {
           )}
 
           {user && !myReviewError && myReviewLoading && (
-            <div className="my-review-card">
+            <div className={styles.myReview}>
               <h3>Your review</h3>
               <p>Loading...</p>
             </div>
           )}
 
           {user && !myReviewError && !myReviewLoading && myReview && (
-            <div className="my-review-card">
+            <div className={styles.myReview}>
               <h3>Your review</h3>
-              <ul className="review-list review-list-single">
-                <ReviewItem r={myReview} onReviewsChanged={refreshReviews} />
-              </ul>
+              <ReviewList
+                reviews={[myReview]}
+                onReviewsChanged={refreshReviews}
+                variant="single"
+              />
             </div>
           )}
 
           {canCreateReview && (
             <ReviewCreateForm
-              workId={work.id}
+              titleId={title.id}
               onReviewsChanged={refreshReviews}
             />
           )}
         </div>
 
-        <section className="work-reviews-list">
+        <section className={styles.otherReviews}>
           <h2>Other reviews: {total}</h2>
 
           {reviewsLoading && <p>Loading reviews...</p>}
@@ -254,11 +258,7 @@ export default function WorkPage() {
           )}
 
           {reviews.length > 0 && (
-            <ReviewList
-              reviews={reviews}
-              onReviewsChanged={refreshReviews}
-              className="review-list"
-            />
+            <ReviewList reviews={reviews} onReviewsChanged={refreshReviews} />
           )}
 
           {totalPages > 1 && (

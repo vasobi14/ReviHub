@@ -1,0 +1,19 @@
+.rating {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.rating legend {
+  padding: 0;
+  color: var(--text-heading);
+}
+
+.rating button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  line-height: 0;
+}
