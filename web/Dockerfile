@@ -1,31 +1,18 @@
-FROM node:22-alpine AS build
-
+FROM node:24-alpine AS deps
 WORKDIR /app
-
 COPY package*.json ./
-RUN --mount=type=cache,target=/root/.npm npm ci
+RUN --mount=type=cache,target=/root/.npm,sharing=locked npm ci
 
+# Vite dev server for docker-compose.yml, which mounts the source code
+FROM deps AS development
+EXPOSE 3000
+CMD ["npm", "start"]
+
+FROM deps AS build
 COPY . .
 RUN npm run build
 
-FROM node:22-alpine AS development
-
-WORKDIR /app
-
-COPY package*.json ./
-RUN --mount=type=cache,target=/root/.npm npm ci
-
-COPY . .
-
-EXPOSE 3000
-
-CMD ["npm", "start"]
-
+# Static files served by nginx
 FROM nginx:alpine AS production
-
-COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-EXPOSE 80
-
-
+COPY --from=build /app/dist /usr/share/nginx/html

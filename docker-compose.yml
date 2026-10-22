@@ -1,3 +1,6 @@
+# Local development. Usage: docker compose up --build
+x-database-url: &database-url postgresql://${POSTGRES_USER:-review_user}:${POSTGRES_PASSWORD:-review_pass}@postgres:5432/${POSTGRES_DB:-review_db}
+
 services:
   postgres:
     image: postgres:18-alpine
@@ -5,46 +8,53 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-review_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-review_pass}
       POSTGRES_DB: ${POSTGRES_DB:-review_db}
-    volumes:
-      - pgdata:/var/lib/postgresql
     ports:
       - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
-      timeout: 5s
       retries: 10
 
-  api:
-    build: ./api
+  migrate:
+    build:
+      context: ./api
+      target: migrate
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-review_user}:${POSTGRES_PASSWORD:-review_pass}@postgres:5432/${POSTGRES_DB:-review_db}
-      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
-      CORS_ORIGIN: http://localhost:3000
-      RESEND_API_KEY: ${RESEND_API_KEY:?Set RESEND_API_KEY in .env}
-      EMAIL_FROM: ${EMAIL_FROM:?Set EMAIL_FROM in .env}
-      FRONTEND_URL: ${FRONTEND_URL:?Set FRONTEND_URL in .env}
+      DATABASE_URL: *database-url
     depends_on:
       postgres:
         condition: service_healthy
+
+  api:
+    build:
+      context: ./api
+      target: runtime
+    env_file: .env
+    environment:
+      DATABASE_URL: *database-url
     ports:
       - "3001:3001"
     volumes:
       - ./api/uploads:/app/uploads
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
   web:
     build:
       context: ./web
       target: development
     environment:
-      VITE_API_URL: http://localhost:3001
-    depends_on:
-      - api
+      API_PROXY_TARGET: http://api:3001
     ports:
       - "3000:3000"
     volumes:
       - ./web:/app
       - /app/node_modules
+    depends_on:
+      - api
 
 volumes:
   pgdata:
-  uploads:

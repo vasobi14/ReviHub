@@ -1,35 +1,34 @@
-declare const process: {
-  env: Record<string, string | undefined>;
-};
-
 import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 
 // The browser talks only to the Vite origin (`/api` and `/uploads`). This lets
 // the app work on localhost and through the computer's LAN address alike.
-const apiProxyTarget = process.env.VITE_API_URL ?? 'http://localhost:3001';
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, '.', 'API_');
+  const apiProxyTarget = env.API_PROXY_TARGET ?? 'http://localhost:3001';
 
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    port: 3000,
-    host: true,
-    watch: {
-      usePolling: true,
-    },
-    proxy: {
-      '/api': {
-        target: apiProxyTarget,
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
+  return {
+    plugins: [react()],
+    server: {
+      port: 3000,
+      host: true,
+      watch: {
+        usePolling: true,
       },
-      '/uploads': {
-        target: apiProxyTarget,
-        changeOrigin: true,
+      proxy: {
+        '/api': {
+          target: apiProxyTarget,
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api/, ''),
+        },
+        '/uploads': {
+          target: apiProxyTarget,
+          changeOrigin: true,
+        },
       },
     },
-  },
-  build: {
-    outDir: 'dist',
-  },
+    build: {
+      outDir: 'dist',
+    },
+  };
 });

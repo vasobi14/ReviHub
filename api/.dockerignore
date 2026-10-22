@@ -1,8 +1,7 @@
 node_modules
 dist
+src/generated
+uploads
+uploads-test
 *.tsbuildinfo
-uploads 
-.env
-.env.local
-.env.*.local
-README.md
+.env*

@@ -40,7 +40,8 @@
             "!**/node_modules",
             "!**/coverage",
             "!src/generated",
-            "!**/package-lock.json"
+            "!**/package-lock.json",
+            "!**/prisma/seed.ts"
         ]
     }
 }

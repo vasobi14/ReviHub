@@ -1,10 +1,5 @@
 node_modules
 dist
 build
-.git
-.gitignore
-README.md
-.env
-.env.local
-.env.*.local
 *.tsbuildinfo
+.env*

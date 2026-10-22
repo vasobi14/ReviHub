@@ -5,6 +5,7 @@
 !/api/uploads/.gitkeep
 /api/uploads-test/
 /api/src/generated/
+api/prisma/seed.ts
 
 /tests
 
