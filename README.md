@@ -1,10 +1,24 @@
 # ReviHub
 
-Reviews for movies, games and books. Sign up, add a title and rate it from 1 to 10.
+A site for reviews of movies, games and books. Sign up, add a title and rate it from 1 to 10.
 
 Live: https://vasobi.site
 
-React + Vite on the frontend, Express + Prisma + PostgreSQL on the backend, everything runs in Docker.
+## Stack
+
+- **Frontend:** TypeScript, React, React Router, SWR, Vite, CSS Modules
+- **Backend:** Node.js, Express, Prisma, PostgreSQL, Zod, JWT
+- **Tests:** Vitest, Supertest, Testcontainers
+- **Infrastructure:** Docker, Docker Compose, GitHub Actions, GHCR, nginx
+
+## Features
+
+- Catalog with search, filters and pagination, reviews with scores, poster uploads, light and dark theme.
+- Authentication: a short-lived access token kept in memory and a refresh token in an `httpOnly` cookie. The refresh token is rotated on every refresh and stored hashed in the database.
+- New accounts confirm their email with a 6-digit code. Login attempts are rate limited.
+- Request bodies and environment variables are validated with Zod, errors go through one handler with proper HTTP statuses.
+- Integration tests for the API.
+- CI/CD: every push to `main` is tested, built into Docker images and deployed to a VPS automatically.
 
 ## Running locally
 
@@ -34,11 +48,6 @@ cd api && npm run test:run
 ```
 
 These are integration tests against a real Postgres that Testcontainers starts in Docker, so Docker has to be running.
-
-## A few implementation details
-
-- The access token lives only in memory on the client. The refresh token is in an `httpOnly` cookie, rotated on every refresh and stored hashed in the database, so logging out actually revokes it.
-- New accounts confirm their email with a 6-digit code before they can log in.
 
 ## Deployment
 
