@@ -7,7 +7,7 @@ import {
     validateImageContent,
 } from '../middleware/upload.js';
 import { titleService } from '../services/titleService.js';
-import { TITLE_TYPES } from '../types/title.types.js';
+import { TITLE_SORTS, TITLE_TYPES } from '../types/title.types.js';
 
 const titleSchema = z.object({
     name: z.string().max(200).min(2),
@@ -24,16 +24,17 @@ const querySchema = z.object({
     type: z.enum(TITLE_TYPES).optional(),
     q: z.string().max(100).optional(),
     page: z.coerce.number().int().positive().max(1000).default(1),
+    sort: z.enum(TITLE_SORTS).default('new'),
 });
 
 const paramSchema = z.coerce.number().int().positive();
 
 const router = Router();
 
-// GET /titles (optionally filtered by type and search query)
+// GET /titles (optionally filtered by type and search query, sorted)
 router.get('/', async (req, res) => {
-    const { type, q, page } = querySchema.parse(req.query);
-    const result = await titleService.findMany(type, q, page);
+    const { type, q, page, sort } = querySchema.parse(req.query);
+    const result = await titleService.findMany(type, q, page, sort);
     res.json(result);
 });
 

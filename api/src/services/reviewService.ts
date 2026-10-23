@@ -3,6 +3,29 @@ import { Prisma } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
 import { AppError } from '../middleware/errorHandler.js';
 
+export async function updateTitleStats(
+    tx: Prisma.TransactionClient,
+    titleId: number,
+    scoreDelta: number,
+    countDelta: number,
+) {
+    const { ratingSum, reviewCount } = await tx.title.update({
+        where: { id: titleId },
+        data: {
+            ratingSum: { increment: scoreDelta },
+            reviewCount: { increment: countDelta },
+        },
+        select: { ratingSum: true, reviewCount: true },
+    });
+
+    await tx.title.update({
+        where: { id: titleId },
+        data: {
+            averageRating: reviewCount > 0 ? ratingSum / reviewCount : null,
+        },
+    });
+}
+
 export class ReviewService {
     async findForUser(titleId: number, userId: number) {
         return prisma.review.findUnique({
@@ -79,12 +102,16 @@ export class ReviewService {
         }
 
         try {
-            return await prisma.review.create({
-                data: { titleId, userId, score, text },
-                include: {
-                    user: { select: { id: true, name: true } },
-                    title: true,
-                },
+            return await prisma.$transaction(async (tx) => {
+                const review = await tx.review.create({
+                    data: { titleId, userId, score, text },
+                    include: {
+                        user: { select: { id: true, name: true } },
+                        title: true,
+                    },
+                });
+                await updateTitleStats(tx, titleId, score, 1);
+                return review;
             });
         } catch (error) {
             if (
@@ -117,12 +144,16 @@ export class ReviewService {
             );
         }
 
-        return prisma.review.update({
-            where: { id },
-            data: { score, text },
-            include: {
-                user: { select: { id: true, name: true } },
-            },
+        return prisma.$transaction(async (tx) => {
+            const updated = await tx.review.update({
+                where: { id },
+                data: { score, text },
+                include: {
+                    user: { select: { id: true, name: true } },
+                },
+            });
+            await updateTitleStats(tx, review.titleId, score - review.score, 0);
+            return updated;
         });
     }
 
@@ -137,7 +168,11 @@ export class ReviewService {
             );
         }
 
-        return prisma.review.delete({ where: { id } });
+        return prisma.$transaction(async (tx) => {
+            const deleted = await tx.review.delete({ where: { id } });
+            await updateTitleStats(tx, review.titleId, -review.score, -1);
+            return deleted;
+        });
     }
 }
 

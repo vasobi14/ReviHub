@@ -33,6 +33,10 @@ model Title {
   reviews     Review[]
   imageUrl    String?
 
+  ratingSum     Int    @default(0)
+  reviewCount   Int    @default(0)
+  averageRating Float?
+
   createdAt DateTime @default(now())
   createdById Int
   createdBy   User @relation(fields: [createdById], references: [id])

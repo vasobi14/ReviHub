@@ -1,13 +1,30 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import config from '../config/env.js';
-import type { Title as PrismaTitle } from '../generated/prisma/client.js';
+import type {
+    Prisma,
+    Title as PrismaTitle,
+} from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
 import { AppError } from '../middleware/errorHandler.js';
-import type { TitleType } from '../types/title.types.js';
+import type { TitleSort, TitleType } from '../types/title.types.js';
 import { logger } from '../utils/logger.js';
 
 const uploadDir = config.uploadDir;
+
+export const MIN_REVIEWS_FOR_TOP_RATED = 3;
+
+export const TITLES_PAGE_SIZE = 12;
+
+const ORDER_BY: Record<TitleSort, Prisma.TitleOrderByWithRelationInput[]> = {
+    new: [{ createdAt: 'desc' }, { id: 'desc' }],
+    popular: [{ reviewCount: 'desc' }, { createdAt: 'desc' }, { id: 'desc' }],
+    rating: [
+        { averageRating: { sort: 'desc', nulls: 'last' } },
+        { reviewCount: 'desc' },
+        { id: 'desc' },
+    ],
+};
 
 async function deleteImageFile(imageUrl: string | null) {
     if (!imageUrl) return;
@@ -48,11 +65,13 @@ export class TitleService {
         return title;
     }
 
-    async findMany(type?: TitleType, query?: string, page: number = 1) {
-        const where: {
-            type?: TitleType;
-            name?: { contains: string; mode: 'insensitive' };
-        } = {};
+    async findMany(
+        type?: TitleType,
+        query?: string,
+        page: number = 1,
+        sort: TitleSort = 'new',
+    ) {
+        const where: Prisma.TitleWhereInput = {};
 
         if (type) {
             where.type = type;
@@ -65,103 +84,52 @@ export class TitleService {
             };
         }
 
-        const skip = (page - 1) * config.pageSize;
+        if (sort === 'rating') {
+            where.reviewCount = { gte: MIN_REVIEWS_FOR_TOP_RATED };
+        }
+
+        const skip = (page - 1) * TITLES_PAGE_SIZE;
 
         const [items, total] = await Promise.all([
             prisma.title.findMany({
                 where,
-                orderBy: {
-                    createdAt: 'desc',
-                },
-                include: {
-                    reviews: {
-                        orderBy: {
-                            createdAt: 'desc',
-                        },
-                        take: 3,
-                        include: {
-                            user: {
-                                select: {
-                                    id: true,
-                                    name: true,
-                                },
-                            },
-                        },
-                    },
+                orderBy: ORDER_BY[sort],
+                select: {
+                    id: true,
+                    name: true,
+                    type: true,
+                    releaseYear: true,
+                    description: true,
+                    averageRating: true,
+                    reviewCount: true,
+                    imageUrl: true,
                 },
                 skip,
-                take: config.pageSize,
+                take: TITLES_PAGE_SIZE,
             }),
             prisma.title.count({ where }),
         ]);
 
-        const titleIds = items.map((title) => title.id);
-
-        const reviewStats = await prisma.review.groupBy({
-            by: ['titleId'],
-            where: {
-                titleId: {
-                    in: titleIds,
-                },
-            },
-            _avg: {
-                score: true,
-            },
-            _count: {
-                _all: true,
-            },
-        });
-
-        const statsByTitleId = new Map(
-            reviewStats.map((stat) => [stat.titleId, stat]),
-        );
-
-        const result = items.map((title) => {
-            const stats = statsByTitleId.get(title.id);
-            return {
-                id: title.id,
-                name: title.name,
-                type: title.type,
-                releaseYear: title.releaseYear,
-                description: title.description,
-
-                averageRating: stats?._avg.score ?? null,
-                reviewCount: stats?._count._all ?? 0,
-
-                latestReviews: title.reviews,
-                imageUrl: title.imageUrl,
-            };
-        });
-
         return {
-            items: result,
+            items,
             total,
             page,
-            pageSize: config.pageSize,
-            totalPages: Math.ceil(total / config.pageSize),
+            pageSize: TITLES_PAGE_SIZE,
+            totalPages: Math.ceil(total / TITLES_PAGE_SIZE),
         };
     }
 
     async findOne(id: number) {
         const title = await prisma.title.findUnique({
             where: { id },
+            omit: { ratingSum: true },
         });
 
         if (!title) {
             throw new AppError(404, 'Title not found', 'NOT_FOUND');
         }
 
-        const stats = await prisma.review.aggregate({
-            where: { titleId: id },
-            _avg: { score: true },
-            _count: { _all: true },
-        });
-
-        return {
-            ...title,
-            averageRating: stats._avg.score ?? null,
-            reviewCount: stats._count._all,
-        };
+        return title;
     }
 
     async create(

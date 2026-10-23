@@ -4,8 +4,9 @@ import path from 'node:path';
 import request from 'supertest';
 import { beforeEach, describe, expect, it } from 'vitest';
 import app from '../src/app.js';
-import config from '../src/config/env.js';
+import { TITLES_PAGE_SIZE } from '../src/services/titleService.js';
 import {
+    authenticatedRequest,
     clearDatabase,
     createReview,
     createTestTitle,
@@ -56,6 +57,91 @@ describe('GET /titles', () => {
 
         expect(res.status).toBe(400);
         expect(res.body.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('sorts by number of reviews', async () => {
+        const [u1, u2] = [await createTestUser(), await createTestUser()];
+        const quiet = await createTestTitle({ name: 'Quiet' });
+        const popular = await createTestTitle({ name: 'Popular' });
+        await createReview({ titleId: quiet.id, userId: u1.id, score: 9 });
+        await createReview({ titleId: popular.id, userId: u1.id, score: 5 });
+        await createReview({ titleId: popular.id, userId: u2.id, score: 5 });
+
+        const res = await request(app).get('/titles?sort=popular');
+
+        expect(res.status).toBe(200);
+        expect(res.body.items.map((t: { name: string }) => t.name)).toEqual([
+            'Popular',
+            'Quiet',
+        ]);
+    });
+
+    it('sorts by average rating, only titles with 3+ reviews', async () => {
+        const users = [
+            await createTestUser(),
+            await createTestUser(),
+            await createTestUser(),
+        ];
+        const review = (titleId: number, scores: number[]) =>
+            Promise.all(
+                scores.map((score, i) =>
+                    createReview({ titleId, userId: users[i].id, score }),
+                ),
+            );
+        await createTestTitle({ name: 'Unrated' });
+        const few = await createTestTitle({ name: 'Few reviews' });
+        const low = await createTestTitle({ name: 'Low' });
+        const high = await createTestTitle({ name: 'High' });
+        await review(few.id, [10, 10]);
+        await review(low.id, [4, 4, 4]);
+        await review(high.id, [9, 8, 7]);
+
+        const res = await request(app).get('/titles?sort=rating');
+
+        expect(res.status).toBe(200);
+        expect(res.body.items.map((t: { name: string }) => t.name)).toEqual([
+            'High',
+            'Low',
+        ]);
+        expect(res.body.total).toBe(2);
+        expect(res.body.items[0].averageRating).toBe(8);
+    });
+
+    it('returns 400 for invalid sort', async () => {
+        const res = await request(app).get('/titles?sort=random');
+
+        expect(res.status).toBe(400);
+        expect(res.body.code).toBe('VALIDATION_ERROR');
+    });
+});
+
+describe('Title review stats', () => {
+    beforeEach(async () => {
+        await clearDatabase();
+    });
+
+    it('follow reviews being created, updated and deleted', async () => {
+        const title = await createTestTitle();
+        const [u1, u2] = [await createTestUser(), await createTestUser()];
+        const api1 = await authenticatedRequest(u1.id);
+        const api2 = await authenticatedRequest(u2.id);
+
+        const stats = async () => {
+            const res = await request(app).get(`/titles/${title.id}`);
+            return [res.body.averageRating, res.body.reviewCount];
+        };
+
+        const first = await api1
+            .post('/reviews')
+            .send({ titleId: title.id, score: 8 });
+        await api2.post('/reviews').send({ titleId: title.id, score: 4 });
+        expect(await stats()).toEqual([6, 2]);
+
+        await api1.put(`/reviews/${first.body.id}`).send({ score: 10 });
+        expect(await stats()).toEqual([7, 2]);
+
+        await api1.delete(`/reviews/${first.body.id}`);
+        expect(await stats()).toEqual([4, 1]);
     });
 });
 
@@ -441,8 +527,8 @@ describe('GET /titles pagination', () => {
         await clearDatabase();
     });
 
-    it('paginates titles using the configured page size', async () => {
-        const pageSize = config.pageSize;
+    it('paginates titles by TITLES_PAGE_SIZE', async () => {
+        const pageSize = TITLES_PAGE_SIZE;
         for (let i = 0; i < pageSize * 2; i++) {
             await createTestTitle({
                 name: `Title ${String(i).padStart(2, '0')}`,

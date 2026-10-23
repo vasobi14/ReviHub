@@ -6,6 +6,7 @@ import request from 'supertest';
 import app from '../src/app.js';
 import config from '../src/config/env.js';
 import { prisma } from '../src/lib/prisma.js';
+import { updateTitleStats } from '../src/services/reviewService.js';
 
 const uploadDir = config.uploadDir;
 
@@ -77,13 +78,17 @@ export async function createReview(data: {
     score: number;
     text?: string;
 }) {
-    return prisma.review.create({
-        data: {
-            titleId: data.titleId,
-            userId: data.userId,
-            score: data.score,
-            text: data.text ?? 'review text',
-        },
+    return prisma.$transaction(async (tx) => {
+        const review = await tx.review.create({
+            data: {
+                titleId: data.titleId,
+                userId: data.userId,
+                score: data.score,
+                text: data.text ?? 'review text',
+            },
+        });
+        await updateTitleStats(tx, data.titleId, data.score, 1);
+        return review;
     });
 }
 
@@ -104,8 +109,11 @@ export async function authenticatedRequest(userId: number) {
 export async function createUserWithReview() {
     const user = await createTestUser();
     const title = await createTestTitle({ createdById: user.id });
-    const review = await prisma.review.create({
-        data: { titleId: title.id, userId: user.id, score: 8, text: 'Great' },
+    const review = await createReview({
+        titleId: title.id,
+        userId: user.id,
+        score: 8,
+        text: 'Great',
     });
 
     return { user, title, review, token: createToken(user.id) };
