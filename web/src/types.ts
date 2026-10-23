@@ -1,4 +1,3 @@
-// src/types.ts
 export interface User {
   id: number;
   email: string;
@@ -17,6 +16,8 @@ export interface Review {
 
 export type TitleType = 'movie' | 'game' | 'book';
 
+export type TitleSort = 'new' | 'popular' | 'rating';
+
 export interface Title {
   id: number;
   name: string;
@@ -31,9 +32,7 @@ export interface Title {
   createdAt: string;
 }
 
-export interface TitleListItem extends Omit<Title, 'reviews'> {
-  latestReviews: Review[];
-}
+export type TitleListItem = Omit<Title, 'reviews'>;
 
 export interface PaginatedResponse<T> {
   items: T[];

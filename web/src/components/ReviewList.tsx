@@ -5,7 +5,7 @@ import styles from './ReviewList.module.css';
 interface ReviewListProps {
   reviews: Review[];
   onReviewsChanged?: () => void;
-  variant?: 'grid' | 'compact' | 'single';
+  variant?: 'grid' | 'single';
 }
 
 export default function ReviewList({

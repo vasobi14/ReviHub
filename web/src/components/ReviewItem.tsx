@@ -5,8 +5,8 @@ import { useAuth } from '../context/AuthContext';
 import type { Review } from '../types';
 import { getErrorMessage } from '../utils/error';
 import Avatar from './Avatar';
+import ReviewForm from './ReviewForm';
 import styles from './ReviewItem.module.css';
-import StarRating from './StarRating';
 
 const dateFormat = new Intl.DateTimeFormat('en-US', {
   day: 'numeric',
@@ -27,31 +27,13 @@ export default function ReviewItem({
 }: ReviewItemProps) {
   const { user } = useAuth();
   const [editing, setEditing] = useState(false);
-  const [editingForm, setEditingForm] = useState({ score: 5, text: '' });
   const [error, setError] = useState('');
-  const [saving, setSaving] = useState(false);
 
   const canEdit = user?.id && r.user?.id === user.id;
-
-  const handleSaveReview = async () => {
-    if (!editing || !onReviewsChanged) return;
-    setSaving(true);
-    setError('');
-    try {
-      await updateReview(r.id, editingForm);
-      setEditing(false);
-      onReviewsChanged();
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const handleEditReview = () => {
     setEditing(true);
     setError('');
-    setEditingForm({ score: r.score, text: r.text || '' });
   };
 
   const handleDeleteReview = async () => {
@@ -73,44 +55,17 @@ export default function ReviewItem({
     >
       {editing ? (
         <div className={styles.editPanel}>
-          <div className="form-stack">
-            <StarRating
-              value={editingForm.score}
-              onChange={(score) =>
-                setEditingForm((prev) => ({ ...prev, score }))
-              }
-            />
-            <div>
-              <label>
-                Text
-                <br />
-                <textarea
-                  rows={2}
-                  value={editingForm.text}
-                  onChange={(e) =>
-                    setEditingForm((prev) => ({
-                      ...prev,
-                      text: e.target.value,
-                    }))
-                  }
-                  className="full-width"
-                />
-              </label>
-            </div>
-            <div className="inline-actions">
-              <button type="button" onClick={() => setEditing(false)}>
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveReview}
-                disabled={saving}
-              >
-                {saving ? 'Saving...' : 'Save'}
-              </button>
-              {error && <div className="error-message">{error}</div>}
-            </div>
-          </div>
+          <ReviewForm
+            initialScore={r.score}
+            initialText={r.text ?? ''}
+            submitLabel="Save"
+            onSubmit={async (score, text) => {
+              await updateReview(r.id, { score, text });
+              setEditing(false);
+              onReviewsChanged?.();
+            }}
+            onCancel={() => setEditing(false)}
+          />
         </div>
       ) : (
         <>
@@ -157,6 +112,7 @@ export default function ReviewItem({
           </div>
 
           {r.text && <p className={styles.text}>{r.text}</p>}
+          {error && <div className="error-message">{error}</div>}
         </>
       )}
     </li>

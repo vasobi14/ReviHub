@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import useSWR from 'swr';
 import { apiFetch } from '../api';
-import type { PaginatedResponse, TitleListItem } from '../types';
+import type { PaginatedResponse, TitleListItem, TitleSort } from '../types';
 
 const fetcher = (url: string) =>
   apiFetch<PaginatedResponse<TitleListItem>>(url);
@@ -9,10 +9,11 @@ const fetcher = (url: string) =>
 export function useTitles(
   typeFilter: string,
   searchQuery: string,
-  page: number
+  page: number,
+  sort: TitleSort
 ) {
   const titlesQuery = useMemo(() => {
-    const params = [`page=${page}`];
+    const params = [`page=${page}`, `sort=${sort}`];
 
     if (typeFilter !== 'all') {
       params.push(`type=${encodeURIComponent(typeFilter)}`);
@@ -23,7 +24,7 @@ export function useTitles(
     }
 
     return `/titles${params.length ? `?${params.join('&')}` : ''}`;
-  }, [typeFilter, searchQuery, page]);
+  }, [typeFilter, searchQuery, page, sort]);
 
   const { data, error, mutate, isLoading } = useSWR<
     PaginatedResponse<TitleListItem>

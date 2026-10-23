@@ -1,70 +1,62 @@
-import { BookOpen, Film, Gamepad2, StarIcon } from 'lucide-react';
+import { StarIcon } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import { TITLE_TYPES } from '../titleTypes';
 import type { TitleListItem } from '../types';
-import ReviewList from './ReviewList';
 import styles from './TitleCard.module.css';
 import { TitleImage } from './TitleImage';
 
 interface TitleCardProps {
   title: TitleListItem;
-  onReviewsChanged: () => void;
+}
+
+// Placeholder with the card's shape, shown while the catalog loads
+export function TitleCardSkeleton() {
+  return (
+    <li className={`${styles.card} ${styles.skeleton}`} aria-hidden="true">
+      <div className={`${styles.bone} ${styles.boneCover}`} />
+      <div className={styles.bone} style={{ width: '70%' }} />
+      <div className={styles.bone} style={{ width: '45%' }} />
+      <div className={styles.bone} style={{ width: '55%' }} />
+      <div className={styles.bone} style={{ width: '85%' }} />
+    </li>
+  );
 }
 
 export default function TitleCard({ title }: TitleCardProps) {
   const location = useLocation();
   const from = `${location.pathname}${location.search}`;
-  const TYPE_ICON = {
-    movie: Film,
-    game: Gamepad2,
-    book: BookOpen,
-  } as const;
-  const Icon = TYPE_ICON[title.type];
+  const { icon: Icon, label } = TITLE_TYPES[title.type];
+
   return (
     <li className={styles.card}>
+      <div className={styles.cover}>
+        <TitleImage imageUrl={title.imageUrl} type={title.type} />
+      </div>
       <h3 className={styles.name}>
         <Link to={`/titles/${title.id}`} state={{ from }}>
           {title.name}
         </Link>
-        <Icon size={20} aria-hidden="true" />
-        {title.releaseYear ? `${title.releaseYear} ` : ''}
       </h3>
-      <TitleImage imageUrl={title.imageUrl} type={title.type} />
-      {title.latestReviews.length !== 0 && (
-        <div>
-          <strong>
-            <span className="rating-badge">
-              <StarIcon size={20} fill="gold" />{' '}
-              {title.averageRating?.toFixed(1) ?? '—'}
-              {' by '}
-              {title.reviewCount} reviews
+      <p className={styles.meta}>
+        <Icon size={16} aria-hidden="true" />
+        {label}
+        {title.releaseYear && ` · ${title.releaseYear}`}
+      </p>
+      <p className={styles.stats}>
+        {title.reviewCount > 0 ? (
+          <>
+            <span className={styles.rating}>
+              <StarIcon size={18} fill="gold" />
+              {title.averageRating?.toFixed(1)}
             </span>
-          </strong>
-        </div>
-      )}
-      <div className={styles.description}>{title.description}</div>
-      {title.latestReviews.length > 0 ? (
-        <>
-          <h4>Latest reviews</h4>
-          <ReviewList reviews={title.latestReviews} variant="compact" />
-          <Link
-            className="button-link"
-            to={`/titles/${title.id}`}
-            state={{ from }}
-          >
-            Read more →
-          </Link>
-        </>
-      ) : (
-        <>
-          <p>No reviews yet.</p>
-          <Link
-            className="button-link"
-            to={`/titles/${title.id}`}
-            state={{ from }}
-          >
-            Be the first →
-          </Link>
-        </>
+            {title.reviewCount} {title.reviewCount === 1 ? 'review' : 'reviews'}
+          </>
+        ) : (
+          'No reviews yet'
+        )}
+      </p>
+      {title.description && (
+        <p className={styles.description}>{title.description}</p>
       )}
     </li>
   );

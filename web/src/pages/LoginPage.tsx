@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import AuthPanel from '../components/AuthPanel';
 import { useAuth } from '../context/AuthContext';
 import { getErrorMessage } from '../utils/error';
 
@@ -42,54 +43,43 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="auth-page">
-      <div className="page-header full-width">
-        <h1>Login</h1>
-        <button type="button" onClick={() => navigate(from, { replace: true })}>
-          Return
-        </button>
-      </div>
-      <form
-        onSubmit={handleSubmit}
-        className="form-stack form-narrow full-width"
-      >
-        <div>
-          <label>
-            Email
-            <br />
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="full-width"
-            />
-          </label>
-        </div>
-        <div>
-          <label>
-            Password
-            <br />
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="full-width"
-            />
-          </label>
-        </div>
-        {error && <div className="error-message">Error: {error}</div>}
-        <button type="submit" disabled={loading}>
-          {loading ? 'Loading...' : 'Submit'}
-        </button>
-        <div>
-          Don't have account?{' '}
+    <AuthPanel
+      title="Log in"
+      footer={
+        <>
+          Don't have an account?{' '}
           <Link to="/register" state={{ from }}>
             Register
           </Link>
-        </div>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} className="form-fields">
+        <label className="field">
+          <span className="field-label">Email</span>
+          <input
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </label>
+        <label className="field">
+          <span className="field-label">Password</span>
+          <input
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </label>
+        {error && <div className="error-message">{error}</div>}
+        <button type="submit" className="button-primary" disabled={loading}>
+          {loading ? 'Logging in...' : 'Log in'}
+        </button>
       </form>
-    </main>
+    </AuthPanel>
   );
 }

@@ -1,42 +1,58 @@
-import { BookOpen, CircleStar, Film, Gamepad2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { BookOpen, CircleStar, Film, Gamepad2, Plus } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { Pagination } from '../components/Pagination';
-import TitleCard from '../components/TitleCard';
+import SegmentedControl from '../components/SegmentedControl';
+import TitleCard, { TitleCardSkeleton } from '../components/TitleCard';
 import { useAuth } from '../context/AuthContext';
 import { useTitles } from '../hooks/useTitles';
+import type { TitleSort } from '../types';
 import styles from './HomePage.module.css';
+
+const CATEGORIES = [
+  { value: 'all', label: 'All', icon: CircleStar },
+  { value: 'movie', label: 'Movies', icon: Film },
+  { value: 'game', label: 'Games', icon: Gamepad2 },
+  { value: 'book', label: 'Books', icon: BookOpen },
+];
+
+const SORTS: { value: TitleSort; label: string }[] = [
+  { value: 'new', label: 'Newest' },
+  { value: 'popular', label: 'Popular' },
+  { value: 'rating', label: 'Top rated' },
+];
+
+// One page of placeholders
+const SKELETONS = Array.from({ length: 12 }, (_, i) => `skeleton-${i}`);
 
 export default function HomePage() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const typeFilter = searchParams.get('type') ?? 'all';
   const searchQuery = searchParams.get('q')?.trim() ?? '';
+  const sort =
+    SORTS.find((s) => s.value === searchParams.get('sort'))?.value ?? 'new';
   const requestedPage = Number(searchParams.get('page') ?? '1');
   const page =
     Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
   const [titleFilter, setTitleFilter] = useState(searchQuery);
 
-  const CATEGORIES = [
-    { value: 'all', label: 'EVERYTHING', icon: CircleStar },
-    { value: 'movie', label: 'MOVIES', icon: Film },
-    { value: 'game', label: 'GAMES', icon: Gamepad2 },
-    { value: 'book', label: 'BOOKS', icon: BookOpen },
-  ];
-
-  const handleTypeFilterChange = (newType: string) => {
-    setSearchParams(
-      (current) => {
-        const next = new URLSearchParams(current);
-        if (newType === 'all') next.delete('type');
-        else next.set('type', newType);
-        next.delete('page');
-        return next;
-      },
-      { replace: true }
-    );
-  };
+  const setParam = useCallback(
+    (key: string, value: string | null) => {
+      setSearchParams(
+        (current) => {
+          const next = new URLSearchParams(current);
+          if (value) next.set(key, value);
+          else next.delete(key);
+          next.delete('page');
+          return next;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
 
   useEffect(() => {
     setTitleFilter(searchQuery);
@@ -46,20 +62,9 @@ export default function HomePage() {
     const query = titleFilter.trim();
     if (query === searchQuery) return;
 
-    const timeout = setTimeout(() => {
-      setSearchParams(
-        (current) => {
-          const next = new URLSearchParams(current);
-          if (query) next.set('q', query);
-          else next.delete('q');
-          next.delete('page');
-          return next;
-        },
-        { replace: true }
-      );
-    }, 250);
+    const timeout = setTimeout(() => setParam('q', query || null), 250);
     return () => clearTimeout(timeout);
-  }, [titleFilter, searchQuery, setSearchParams]);
+  }, [titleFilter, searchQuery, setParam]);
 
   const handlePageChange = (newPage: number) => {
     setSearchParams(
@@ -74,7 +79,7 @@ export default function HomePage() {
   };
 
   const { titles, total, totalPages, currentPage, error, mutate, isLoading } =
-    useTitles(typeFilter, searchQuery, page);
+    useTitles(typeFilter, searchQuery, page, sort);
 
   const canEdit = !!user?.id;
 
@@ -84,44 +89,55 @@ export default function HomePage() {
     <main>
       <Header />
       <section className={`page-section ${styles.filters}`}>
-        <div className={styles.filterButtons}>
-          {CATEGORIES.map((t) => {
-            const ButtonIcon = t.icon;
-
-            return (
+        <div className={styles.topRow}>
+          <fieldset className={styles.categories} aria-label="Category">
+            {CATEGORIES.map(({ value, label, icon: Icon }) => (
               <button
-                key={t.value}
+                key={value}
                 type="button"
-                onClick={() => handleTypeFilterChange(t.value)}
-                className={
-                  t.value === typeFilter
-                    ? `${styles.filterButton} ${styles.filterButtonActive}`
-                    : styles.filterButton
-                }
+                aria-pressed={value === typeFilter}
+                onClick={() => setParam('type', value === 'all' ? null : value)}
+                className={styles.category}
               >
-                {ButtonIcon && <ButtonIcon size={20} className={styles.icon} />}
-                <span> {t.label}</span>
+                <Icon size={18} aria-hidden="true" />
+                {label}
               </button>
-            );
-          })}
+            ))}
+          </fieldset>
+          {canEdit && (
+            <Link
+              to="/titles/new"
+              className={`button-link button-primary ${styles.addButton}`}
+            >
+              <Plus size={18} aria-hidden="true" />
+              Add title
+            </Link>
+          )}
         </div>
 
         <div className={styles.searchRow}>
           <input
-            id="search"
+            type="search"
             value={titleFilter}
             onChange={(e) => setTitleFilter(e.target.value)}
             placeholder="Search by name..."
+            aria-label="Search by name"
             className={styles.search}
           />
-          <span className={styles.count}>
-            Titles matched filter: {total ? total : 0}{' '}
+          <SegmentedControl
+            label="Sort by"
+            hideLabel
+            options={SORTS}
+            value={sort}
+            onChange={(value) =>
+              setParam('sort', value === 'new' ? null : value)
+            }
+            className={styles.sort}
+          />
+          <span className={styles.count} aria-live="polite">
+            {!(isLoading && titles.length === 0) &&
+              `${total} ${total === 1 ? 'title' : 'titles'}`}
           </span>
-          {canEdit && (
-            <Link to="/titles/new" className="button-link">
-              Add a new title
-            </Link>
-          )}
         </div>
       </section>
 
@@ -135,8 +151,6 @@ export default function HomePage() {
           </p>
         )}
 
-        {!error && isLoading && <div>Loading...</div>}
-
         {!error &&
           !isLoading &&
           titles.length === 0 &&
@@ -148,14 +162,10 @@ export default function HomePage() {
               {canEdit && <Link to="/titles/new">Add the first one →</Link>}
             </p>
           ))}
-        <ul className={styles.titleList}>
-          {titles.map((title) => (
-            <TitleCard
-              key={title.id}
-              title={title}
-              onReviewsChanged={() => mutate()}
-            />
-          ))}
+        <ul className={styles.titleList} aria-busy={isLoading}>
+          {isLoading && titles.length === 0
+            ? SKELETONS.map((key) => <TitleCardSkeleton key={key} />)
+            : titles.map((title) => <TitleCard key={title.id} title={title} />)}
         </ul>
 
         <Pagination

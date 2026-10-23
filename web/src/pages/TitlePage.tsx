@@ -1,25 +1,20 @@
-import { ArrowLeft, BookOpen, Film, Gamepad2, Star } from 'lucide-react';
+import { ArrowLeft, Star } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { deleteTitle } from '../api';
+import { deleteTitle, updateTitle } from '../api';
 import { Header } from '../components/Header';
 import { Pagination } from '../components/Pagination';
 import ReviewCreateForm from '../components/ReviewCreateForm';
 import ReviewList from '../components/ReviewList';
-import TitleEditForm from '../components/TitleEditForm';
+import TitleForm from '../components/TitleForm';
 import { TitleImage } from '../components/TitleImage';
 import { useAuth } from '../context/AuthContext';
 import { useMyReview } from '../hooks/useMyReview';
 import { useReviews } from '../hooks/useReviews';
 import { useTitle } from '../hooks/useTitle';
+import { TITLE_TYPES } from '../titleTypes';
 import { getErrorMessage } from '../utils/error';
 import styles from './TitlePage.module.css';
-
-const TYPE_ICON = {
-  movie: Film,
-  game: Gamepad2,
-  book: BookOpen,
-} as const;
 
 export default function TitlePage() {
   const [reviewsPage, setReviewsPage] = useState(1);
@@ -83,13 +78,9 @@ export default function TitlePage() {
     return (
       <main>
         <Header />
-        <button
-          type="button"
-          className={styles.backButton}
-          onClick={handleBack}
-        >
-          <ArrowLeft size={18} aria-hidden="true" />
-          <span>Back to titles</span>
+        <button type="button" className="button-text" onClick={handleBack}>
+          <ArrowLeft size={16} aria-hidden="true" />
+          All titles
         </button>
         {status === 404 ? (
           <p>Title not found.</p>
@@ -114,7 +105,7 @@ export default function TitlePage() {
     );
   }
 
-  const Icon = TYPE_ICON[title.type];
+  const Icon = TITLE_TYPES[title.type].icon;
   const canCreateReview =
     !!user?.id && !myReview && !myReviewLoading && !myReviewError;
 
@@ -123,13 +114,9 @@ export default function TitlePage() {
       <Header />
       <div className={styles.page}>
         <div className={styles.buttonPanel}>
-          <button
-            type="button"
-            className={styles.backButton}
-            onClick={handleBack}
-          >
-            <ArrowLeft size={18} aria-hidden="true" />
-            <span>Back to titles</span>
+          <button type="button" className="button-text" onClick={handleBack}>
+            <ArrowLeft size={16} aria-hidden="true" />
+            All titles
           </button>
           {canEdit && (
             <div className={styles.ownerActions}>
@@ -147,16 +134,27 @@ export default function TitlePage() {
             </div>
           )}
         </div>
-        <div className={styles.details}>
+        <div
+          className={
+            editingTitle
+              ? `${styles.details} ${styles.editing}`
+              : styles.details
+          }
+        >
           {editingTitle ? (
-            <TitleEditForm
-              title={title}
-              onTitleEdit={() => {
-                setEditingTitle(false);
-                void mutate();
-              }}
-              onCancel={() => setEditingTitle(false)}
-            />
+            <div className={styles.editor}>
+              <h2 className={styles.editorHeading}>Edit title</h2>
+              <TitleForm
+                initial={title}
+                submitLabel="Save"
+                onSubmit={async (data) => {
+                  await updateTitle(title.id, data);
+                  setEditingTitle(false);
+                  void mutate();
+                }}
+                onCancel={() => setEditingTitle(false)}
+              />
+            </div>
           ) : (
             <>
               <div className={styles.poster}>
@@ -192,60 +190,65 @@ export default function TitlePage() {
             </>
           )}
 
-          {!user && (
-            <div className={styles.myReview}>
-              <p>
-                <Link to="/login" state={{ from: location.pathname }}>
-                  Login
-                </Link>{' '}
-                or{' '}
-                <Link to="/register" state={{ from: location.pathname }}>
-                  Register
-                </Link>{' '}
-                to leave a review.
-              </p>
-            </div>
-          )}
+          <div className={styles.reviewSlot}>
+            {!user && (
+              <div className={styles.myReview}>
+                <p>
+                  <Link to="/login" state={{ from: location.pathname }}>
+                    Login
+                  </Link>{' '}
+                  or{' '}
+                  <Link to="/register" state={{ from: location.pathname }}>
+                    Register
+                  </Link>{' '}
+                  to leave a review.
+                </p>
+              </div>
+            )}
 
-          {user && myReviewError && (
-            <div className={styles.myReview}>
-              <p role="alert">
-                Could not check whether you have reviewed this title.{' '}
-                <button type="button" onClick={() => void mutateMyReview()}>
-                  Retry
-                </button>
-              </p>
-            </div>
-          )}
+            {user && myReviewError && (
+              <div className={styles.myReview}>
+                <p role="alert">
+                  Could not check whether you have reviewed this title.{' '}
+                  <button type="button" onClick={() => void mutateMyReview()}>
+                    Retry
+                  </button>
+                </p>
+              </div>
+            )}
 
-          {user && !myReviewError && myReviewLoading && (
-            <div className={styles.myReview}>
-              <h3>Your review</h3>
-              <p>Loading...</p>
-            </div>
-          )}
+            {user && !myReviewError && myReviewLoading && (
+              <div className={styles.myReview}>
+                <h3>Your review</h3>
+                <p>Loading...</p>
+              </div>
+            )}
 
-          {user && !myReviewError && !myReviewLoading && myReview && (
-            <div className={styles.myReview}>
-              <h3>Your review</h3>
-              <ReviewList
-                reviews={[myReview]}
+            {user && !myReviewError && !myReviewLoading && myReview && (
+              <div className={styles.myReview}>
+                <h3>Your review</h3>
+                <ReviewList
+                  reviews={[myReview]}
+                  onReviewsChanged={refreshReviews}
+                  variant="single"
+                />
+              </div>
+            )}
+
+            {canCreateReview && (
+              <ReviewCreateForm
+                titleId={title.id}
                 onReviewsChanged={refreshReviews}
-                variant="single"
               />
-            </div>
-          )}
-
-          {canCreateReview && (
-            <ReviewCreateForm
-              titleId={title.id}
-              onReviewsChanged={refreshReviews}
-            />
-          )}
+            )}
+          </div>
         </div>
 
         <section className={styles.otherReviews}>
-          <h2>Other reviews: {total}</h2>
+          <h2 className={styles.reviewsHeading}>
+            {myReview ? 'Other reviews' : 'Reviews'}
+            <span className={styles.reviewsCount}>{total}</span>
+          </h2>
 
           {reviewsLoading && <p>Loading reviews...</p>}
 
@@ -254,7 +257,7 @@ export default function TitlePage() {
           )}
 
           {!reviewsError && !reviewsLoading && reviews.length === 0 && (
-            <p>No other reviews yet.</p>
+            <p>{myReview ? 'No other reviews yet.' : 'No reviews yet.'}</p>
           )}
 
           {reviews.length > 0 && (

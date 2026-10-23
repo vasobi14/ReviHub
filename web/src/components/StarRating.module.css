@@ -1,19 +1,42 @@
 .rating {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
   min-width: 0;
   margin: 0;
   padding: 0;
   border: 0;
+  text-align: left;
 }
 
 .rating legend {
+  margin-bottom: var(--space-xs);
   padding: 0;
-  color: var(--text-heading);
 }
 
-.rating button {
-  padding: 0;
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.stars {
+  display: flex;
+}
+
+.stars button,
+.stars button:hover:not(:disabled) {
+  padding: 1px;
   border: 0;
   background: transparent;
   cursor: pointer;
   line-height: 0;
+}
+
+.value {
+  min-width: 3.5em;
+  color: var(--text-heading);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }

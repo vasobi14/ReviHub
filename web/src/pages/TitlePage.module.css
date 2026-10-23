@@ -8,16 +8,11 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: var(--space-sm);
-  margin-bottom: var(--space-lg);
-}
-
-.backButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-sm);
+  width: 100%;
+  min-height: 44px;
+  margin-bottom: var(--space-md);
 }
 
 .ownerActions {
@@ -27,9 +22,9 @@
 }
 
 .details {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(280px, 360px);
+  grid-template-areas: "poster info review";
   width: 100%;
   gap: var(--space-xl);
   padding: var(--space-lg);
@@ -39,13 +34,38 @@
   margin-bottom: var(--space-xl);
 }
 
+.details.editing {
+  grid-template-areas: "editor editor review";
+}
+
 .poster {
+  grid-area: poster;
+  width: 267px;
+  max-width: 100%;
+}
+
+.editor {
+  grid-area: editor;
   min-width: 0;
 }
 
+.editorHeading {
+  margin: 0 0 var(--space-lg);
+}
+
+.reviewSlot {
+  grid-area: review;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.reviewSlot > * {
+  flex: 1;
+}
+
 .info {
-  flex: 1 1 0;
-  min-width: 100px;
+  grid-area: info;
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
@@ -89,15 +109,20 @@
   display: flex;
   flex-direction: column;
   padding: var(--space-lg);
-  border-radius: var(--radius-lg);
-  background: var(--card-bg);
   text-align: center;
   justify-content: center;
 }
 
-.myReview h3 {
-  align-items: center;
-  margin: 0;
+.reviewsHeading {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+}
+
+.reviewsCount {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  font-weight: 400;
 }
 
 .otherReviews {
@@ -107,9 +132,37 @@
   width: 100%;
 }
 
-@media (max-width: 920px) {
+@media (max-width: 1025px) {
   .details {
-    flex-direction: column;
-    align-items: center;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      "poster info"
+      "poster review";
+  }
+
+  .details.editing {
+    grid-template-areas:
+      "editor editor"
+      "review review";
+  }
+}
+
+@media (max-width: 700px) {
+  .details {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "poster"
+      "info"
+      "review";
+  }
+
+  .details.editing {
+    grid-template-areas:
+      "editor"
+      "review";
+  }
+
+  .poster {
+    justify-self: center;
   }
 }

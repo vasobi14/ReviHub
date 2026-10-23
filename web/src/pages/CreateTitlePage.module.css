@@ -1,8 +1,18 @@
 .page {
-  justify-self: center;
-  display: flex;
-  flex-direction: column;
-  text-align: center;
-  width: 75%;
-  min-width: min(300px, 100%);
+  width: min(720px, 100%);
+  margin: 0 auto;
+  padding: var(--space-xl);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--card-bg);
+}
+
+.page h1 {
+  margin: 0 0 var(--space-lg);
+}
+
+@media (max-width: 410px) {
+  .page {
+    padding: var(--space-lg);
+  }
 }

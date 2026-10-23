@@ -1,11 +1,7 @@
 import { useEffect, useState } from 'react';
-import {
-  Link,
-  useLocation,
-  useNavigate,
-  useSearchParams,
-} from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { resendVerification, verifyEmail } from '../api';
+import AuthPanel from '../components/AuthPanel';
 import { getErrorMessage } from '../utils/error';
 
 const RESEND_COOLDOWN_SECONDS = 60;
@@ -14,9 +10,6 @@ export default function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const email = searchParams.get('email') ?? '';
-
-  const location = useLocation();
-  const from = (location.state as { from?: string } | null)?.from ?? '/';
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -61,59 +54,51 @@ export default function VerifyEmailPage() {
 
   if (!email) {
     return (
-      <main className="auth-page">
-        <div className="page-header full-width">
-          <h1>Verify email</h1>
-          <button
-            type="button"
-            onClick={() => navigate(from, { replace: true })}
-          >
-            Return
-          </button>
-        </div>
+      <AuthPanel title="Verify email">
         <p>
           Missing email. Go back to <Link to="/register">registration</Link>.
         </p>
-      </main>
+      </AuthPanel>
     );
   }
 
   return (
-    <main className="auth-page">
-      <div className="page-header full-width">
-        <h1>Verify your email</h1>
-        <button type="button" onClick={() => navigate(from, { replace: true })}>
-          Return
-        </button>
-      </div>
-
-      <form
-        onSubmit={handleSubmit}
-        className="form-stack form-narrow full-width"
-      >
+    <AuthPanel
+      title="Verify your email"
+      footer={
+        <>
+          Didn't receive the code?{' '}
+          <button
+            type="button"
+            className="button-text"
+            onClick={handleResend}
+            disabled={resending || cooldown > 0}
+          >
+            {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend'}
+          </button>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} className="form-fields">
         <p>
           We sent a 6-digit code to <strong>{email}</strong>. Enter it below.
         </p>
 
-        <div>
-          <label>
-            Code
-            <br />
-            <input
-              type="text"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              maxLength={6}
-              pattern="\d{6}"
-              value={code}
-              onChange={(e) =>
-                setCode(e.target.value.replace(/\D/g, '').slice(0, 6))
-              }
-              required
-              className="full-width"
-            />
-          </label>
-        </div>
+        <label className="field">
+          <span className="field-label">Code</span>
+          <input
+            type="text"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={6}
+            pattern="\d{6}"
+            value={code}
+            onChange={(e) =>
+              setCode(e.target.value.replace(/\D/g, '').slice(0, 6))
+            }
+            required
+          />
+        </label>
 
         {error && <div className="error-message">{error}</div>}
         {success && (
@@ -122,21 +107,14 @@ export default function VerifyEmailPage() {
           </div>
         )}
 
-        <button type="submit" disabled={verifying || code.length !== 6}>
+        <button
+          type="submit"
+          className="button-primary"
+          disabled={verifying || code.length !== 6}
+        >
           {verifying ? 'Verifying...' : 'Verify'}
         </button>
-
-        <div>
-          Didn't receive the code?{' '}
-          <button
-            type="button"
-            onClick={handleResend}
-            disabled={resending || cooldown > 0}
-          >
-            {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend'}
-          </button>
-        </div>
       </form>
-    </main>
+    </AuthPanel>
   );
 }

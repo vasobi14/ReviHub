@@ -1,0 +1,32 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  width: min(400px, 100%);
+  margin: var(--space-xl) auto 0;
+  padding: var(--space-xl);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--card-bg);
+}
+
+.panel > :first-child {
+  align-self: flex-start;
+}
+
+.title {
+  margin: 0;
+}
+
+.footer {
+  margin: 0;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+@media (max-width: 410px) {
+  .panel {
+    margin-top: 0;
+    padding: var(--space-lg);
+  }
+}

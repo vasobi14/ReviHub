@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import AuthPanel from '../components/AuthPanel';
 import { useAuth } from '../context/AuthContext';
 import { getErrorMessage } from '../utils/error';
 
@@ -32,66 +33,53 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="auth-page">
-      <div className="page-header full-width">
-        <h1>Registration</h1>
-        <button type="button" onClick={() => navigate(from, { replace: true })}>
-          Return
-        </button>
-      </div>
-      <form
-        onSubmit={handleSubmit}
-        className="form-stack form-narrow full-width"
-      >
-        <div>
-          <label>
-            Email
-            <br />
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="full-width"
-            />
-          </label>
-        </div>
-        <div>
-          <label>
-            Password
-            <br />
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="full-width"
-            />
-          </label>
-        </div>
-        <div>
-          <label>
-            Name (optional)
-            <br />
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="full-width"
-            />
-          </label>
-        </div>
-        {error && <div className="error-message">{error}</div>}
-        <button type="submit" disabled={loading}>
-          {loading ? 'Loading...' : 'Submit'}
-        </button>
-        <div>
-          Already have account?{' '}
+    <AuthPanel
+      title="Create account"
+      footer={
+        <>
+          Already have an account?{' '}
           <Link to="/login" state={{ from }}>
-            Login
+            Log in
           </Link>
-        </div>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} className="form-fields">
+        <label className="field">
+          <span className="field-label">Email</span>
+          <input
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </label>
+        <label className="field">
+          <span className="field-label">Password</span>
+          <input
+            type="password"
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </label>
+        <label className="field">
+          <span className="field-label">Name</span>
+          <input
+            type="text"
+            autoComplete="nickname"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <span className="field-hint">Optional, shown with your reviews</span>
+        </label>
+        {error && <div className="error-message">{error}</div>}
+        <button type="submit" className="button-primary" disabled={loading}>
+          {loading ? 'Creating account...' : 'Create account'}
+        </button>
       </form>
-    </main>
+    </AuthPanel>
   );
 }

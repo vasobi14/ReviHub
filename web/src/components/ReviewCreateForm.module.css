@@ -1,6 +1,7 @@
 .panel {
-  text-align: center;
   padding: var(--space-lg);
-  border-radius: var(--radius-lg);
-  background: var(--card-bg);
+}
+
+.heading {
+  margin: 0 0 var(--space-md);
 }

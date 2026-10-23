@@ -14,25 +14,31 @@ export default function StarRating({ value, onChange }: StarRatingProps) {
 
   return (
     <fieldset className={styles.rating}>
-      <legend>Rating</legend>
-      {SCORES.map((n) => (
-        <button
-          key={n}
-          type="button"
-          aria-label={`Rate ${n} out of 10`}
-          aria-pressed={n === value}
-          onClick={() => onChange(n)}
-          onMouseEnter={() => setHover(n)}
-          onMouseLeave={() => setHover(0)}
-        >
-          <StarIcon
-            color={n <= value ? 'gold' : 'grey'}
-            fill={n <= (hover || value) ? 'gold' : ''}
-          />
-        </button>
-      ))}
-      <br />
-      You select {value} out of 10
+      <legend className="field-label">Rating</legend>
+      <div className={styles.row}>
+        <div className={styles.stars}>
+          {SCORES.map((n) => (
+            <button
+              key={n}
+              type="button"
+              aria-label={`Rate ${n} out of 10`}
+              aria-pressed={n === value}
+              onClick={() => onChange(n)}
+              onMouseEnter={() => setHover(n)}
+              onMouseLeave={() => setHover(0)}
+            >
+              <StarIcon
+                size={22}
+                color={n <= value ? 'gold' : 'grey'}
+                fill={n <= (hover || value) ? 'gold' : 'none'}
+              />
+            </button>
+          ))}
+        </div>
+        <span className={styles.value} aria-hidden="true">
+          {hover || value}/10
+        </span>
+      </div>
     </fieldset>
   );
 }
