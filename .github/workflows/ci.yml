@@ -139,22 +139,25 @@ jobs:
             set -e
             cd ~/review-app
 
-            # Compose file of exactly the commit that passed the checks above
             git fetch origin main
             git checkout --force ${{ github.sha }}
 
-            # Images built by the `images` job for this commit
             export IMAGE_TAG=${{ github.sha }}
             docker compose -f docker-compose.prod.yml pull
 
-            # --wait blocks until healthchecks pass (API: GET /health)
-            # On failure show only container status: app logs may contain user
-            # data and Actions logs are public. Read them on the server instead.
-            docker compose -f docker-compose.prod.yml up -d --wait --wait-timeout 120 || {
+            fail() {
               docker compose -f docker-compose.prod.yml ps -a
               echo "Deploy failed. On the server run: docker compose -f docker-compose.prod.yml logs migrate api"
               exit 1
             }
+
+            docker compose -f docker-compose.prod.yml up -d --wait --wait-timeout 120 || fail
+
+            for i in $(seq 30); do
+              docker compose -f docker-compose.prod.yml exec -T api node -e 'fetch("http://localhost:3001/health").then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))' && break
+              [ "$i" -eq 30 ] && fail
+              sleep 2
+            done
 
             # Remove this project's images from previous deploys (matched by the
             # source label set in the `images` job; other images are left alone)
