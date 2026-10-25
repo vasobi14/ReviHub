@@ -16,6 +16,7 @@ Live: https://vasobi.site
 - Catalog with search, filters and pagination, reviews with scores, poster uploads, light and dark theme.
 - Authentication: a short-lived access token kept in memory and a refresh token in an `httpOnly` cookie. The refresh token is rotated on every refresh and stored hashed in the database.
 - New accounts confirm their email with a 6-digit code. Login attempts are rate limited.
+- Admin role: moderating titles and reviews, removing users with their content.
 - Request bodies and environment variables are validated with Zod, errors go through one handler with proper HTTP statuses.
 - Integration tests for the API.
 - CI/CD: every push to `main` is tested, built into Docker images and deployed to a VPS automatically.
@@ -51,10 +52,17 @@ These are integration tests against a real Postgres that Testcontainers starts i
 
 ## Deployment
 
-On every push to `main`, GitHub Actions runs the tests, builds the Docker images once and pushes them to GHCR. Then it connects to the VPS over SSH, pulls those images and restarts with `docker compose up --wait`. Database migrations run in a separate one-off container before the API starts.
+The pipeline is in [`.github/workflows/ci.yml`](.github/workflows/ci.yml). Pull requests run steps 1–2 and only check that the images build. A push to `main` runs all of them:
+
+1. Checks, API and frontend in parallel. The API is type-checked and tested against a real Postgres, the frontend is type-checked and built.
+2. Images. Three Docker images (`api`, `migrate`, `web`) are built in parallel with layer caching and pushed to GHCR, tagged with the commit SHA.
+3. Deploy. Actions connects to the VPS over SSH, checks out the compose file of the same commit and pulls its images. `docker compose up --wait` starts Postgres, runs the migrations in a one-off container and only then starts the new API.
+4. Health check. The deploy succeeds once the API answers on `/health`, otherwise it fails and prints the container status. Images from earlier deploys are removed.
+
+Deploys run one at a time, so a newer push waits for the current one to finish.
 
 To roll back, re-run the deploy job of an older commit: its images are still in the registry. Migrations are not rolled back, so they have to stay compatible with the previous version of the code.
 
 On the server, nginx sits in front of the containers: `/api` and `/uploads` go to the API, everything else to the frontend.
 
-The workflow needs these repository secrets: `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY` and `VPS_HOST_FINGERPRINT`.
+The workflow needs the repository variable `VPS_HOST` and the secrets `VPS_USER`, `VPS_SSH_KEY` and `VPS_HOST_FINGERPRINT`.
