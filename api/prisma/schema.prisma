@@ -7,14 +7,22 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
 model User {
   id           Int      @id @default(autoincrement())
   email        String   @unique
   passwordHash String
   name         String?
+  role         Role     @default(USER)
+  createdAt    DateTime @default(now())
   reviews      Review[]
   titles Title[]
   refreshTokens RefreshToken[]
+  requests      RequestLog[]
 
   emailVerified         Boolean   @default(false)
   verificationCodeHash  String?
@@ -55,6 +63,7 @@ model Review {
   createdAt DateTime @default(now())
 
   @@unique([titleId, userId])
+  @@index([userId])
   @@map("review")
 }
 
@@ -69,4 +78,24 @@ model RefreshToken {
 
   @@index([userId])
   @@map("refresh_token")
+}
+
+model RequestLog {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  method      String
+  path        String
+  route       String?
+  status      Int
+  durationMs  Int
+  userId      Int?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  visitorId   String
+  ipEncrypted String
+  userAgent   String?
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([visitorId, createdAt])
+  @@map("request_log")
 }

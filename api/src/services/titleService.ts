@@ -2,12 +2,14 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import config from '../config/env.js';
 import type {
-    Prisma,
-    Title as PrismaTitle,
+  Prisma,
+  Title as PrismaTitle,
 } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
+import { isAdmin } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
 import type { TitleSort, TitleType } from '../types/title.types.js';
+import type { AuthUser } from '../types/user.types.js';
 import { logger } from '../utils/logger.js';
 
 const uploadDir = config.uploadDir;
@@ -17,201 +19,200 @@ export const MIN_REVIEWS_FOR_TOP_RATED = 3;
 export const TITLES_PAGE_SIZE = 12;
 
 const ORDER_BY: Record<TitleSort, Prisma.TitleOrderByWithRelationInput[]> = {
-    new: [{ createdAt: 'desc' }, { id: 'desc' }],
-    popular: [{ reviewCount: 'desc' }, { createdAt: 'desc' }, { id: 'desc' }],
-    rating: [
-        { averageRating: { sort: 'desc', nulls: 'last' } },
-        { reviewCount: 'desc' },
-        { id: 'desc' },
-    ],
+  new: [{ createdAt: 'desc' }, { id: 'desc' }],
+  year: [
+    { releaseYear: { sort: 'desc', nulls: 'last' } },
+    { createdAt: 'desc' },
+    { id: 'desc' },
+  ],
+  popular: [{ reviewCount: 'desc' }, { createdAt: 'desc' }, { id: 'desc' }],
+  rating: [
+    { averageRating: { sort: 'desc', nulls: 'last' } },
+    { reviewCount: 'desc' },
+    { id: 'desc' },
+  ],
 };
 
 async function deleteImageFile(imageUrl: string | null) {
-    if (!imageUrl) return;
+  if (!imageUrl) return;
 
-    const filename = path.basename(imageUrl);
-    const filePath = path.join(uploadDir, filename);
+  const filename = path.basename(imageUrl);
+  const filePath = path.join(uploadDir, filename);
 
-    try {
-        await fs.unlink(filePath);
-    } catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
-    }
+  try {
+    await fs.unlink(filePath);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+  }
 }
 
-async function cleanupImageFile(imageUrl: string | null) {
-    try {
-        await deleteImageFile(imageUrl);
-    } catch (error) {
-        logger.warn('Failed to delete title image file', error);
-    }
+export async function cleanupImageFile(imageUrl: string | null) {
+  try {
+    await deleteImageFile(imageUrl);
+  } catch (error) {
+    logger.warn('Failed to delete title image file', error);
+  }
 }
 
 export class TitleService {
-    async assertOwnership(titleId: number, userId: number) {
-        const title = await prisma.title.findUnique({
-            where: { id: titleId },
-        });
-        if (!title) {
-            throw new AppError(404, 'Title not found', 'NOT_FOUND');
-        }
-        if (title.createdById !== userId) {
-            throw new AppError(
-                403,
-                'Not allowed to modify this title',
-                'FORBIDDEN',
-            );
-        }
-        return title;
+  // The creator or an admin
+  async assertCanModify(titleId: number, user: AuthUser) {
+    const title = await prisma.title.findUnique({
+      where: { id: titleId },
+    });
+    if (!title) {
+      throw new AppError(404, 'Title not found', 'NOT_FOUND');
+    }
+    if (title.createdById !== user.id && !isAdmin(user)) {
+      throw new AppError(403, 'Not allowed to modify this title', 'FORBIDDEN');
+    }
+    return title;
+  }
+
+  async findMany(
+    type?: TitleType,
+    query?: string,
+    page: number = 1,
+    sort: TitleSort = 'new',
+  ) {
+    const where: Prisma.TitleWhereInput = {};
+
+    if (type) {
+      where.type = type;
     }
 
-    async findMany(
-        type?: TitleType,
-        query?: string,
-        page: number = 1,
-        sort: TitleSort = 'new',
-    ) {
-        const where: Prisma.TitleWhereInput = {};
-
-        if (type) {
-            where.type = type;
-        }
-
-        if (query) {
-            where.name = {
-                contains: query,
-                mode: 'insensitive',
-            };
-        }
-
-        if (sort === 'rating') {
-            where.reviewCount = { gte: MIN_REVIEWS_FOR_TOP_RATED };
-        }
-
-        const skip = (page - 1) * TITLES_PAGE_SIZE;
-
-        const [items, total] = await Promise.all([
-            prisma.title.findMany({
-                where,
-                orderBy: ORDER_BY[sort],
-                select: {
-                    id: true,
-                    name: true,
-                    type: true,
-                    releaseYear: true,
-                    description: true,
-                    averageRating: true,
-                    reviewCount: true,
-                    imageUrl: true,
-                },
-                skip,
-                take: TITLES_PAGE_SIZE,
-            }),
-            prisma.title.count({ where }),
-        ]);
-
-        return {
-            items,
-            total,
-            page,
-            pageSize: TITLES_PAGE_SIZE,
-            totalPages: Math.ceil(total / TITLES_PAGE_SIZE),
-        };
+    if (query) {
+      where.name = {
+        contains: query,
+        mode: 'insensitive',
+      };
     }
 
-    async findOne(id: number) {
-        const title = await prisma.title.findUnique({
-            where: { id },
-            omit: { ratingSum: true },
-        });
-
-        if (!title) {
-            throw new AppError(404, 'Title not found', 'NOT_FOUND');
-        }
-
-        return title;
+    if (sort === 'rating') {
+      where.reviewCount = { gte: MIN_REVIEWS_FOR_TOP_RATED };
     }
 
-    async create(
-        data: {
-            name: string;
-            type: TitleType;
-            releaseYear?: number;
-            description?: string;
+    const skip = (page - 1) * TITLES_PAGE_SIZE;
+
+    const [items, total] = await Promise.all([
+      prisma.title.findMany({
+        where,
+        orderBy: ORDER_BY[sort],
+        select: {
+          id: true,
+          name: true,
+          type: true,
+          releaseYear: true,
+          description: true,
+          averageRating: true,
+          reviewCount: true,
+          imageUrl: true,
         },
-        userId: number,
-        imageUrl: string | null,
-    ) {
-        try {
-            return await prisma.title.create({
-                data: {
-                    ...data,
-                    createdById: userId,
-                    imageUrl,
-                },
-            });
-        } catch (error) {
-            await cleanupImageFile(imageUrl);
-            throw error;
-        }
+        skip,
+        take: TITLES_PAGE_SIZE,
+      }),
+      prisma.title.count({ where }),
+    ]);
+
+    return {
+      items,
+      total,
+      page,
+      pageSize: TITLES_PAGE_SIZE,
+      totalPages: Math.ceil(total / TITLES_PAGE_SIZE),
+    };
+  }
+
+  async findOne(id: number) {
+    const title = await prisma.title.findUnique({
+      where: { id },
+      omit: { ratingSum: true },
+    });
+
+    if (!title) {
+      throw new AppError(404, 'Title not found', 'NOT_FOUND');
     }
 
-    async update(
-        id: number,
+    return title;
+  }
+
+  async create(
+    data: {
+      name: string;
+      type: TitleType;
+      releaseYear?: number;
+      description?: string;
+    },
+    userId: number,
+    imageUrl: string | null,
+  ) {
+    try {
+      return await prisma.title.create({
         data: {
-            name: string;
-            type: TitleType;
-            releaseYear?: number;
-            description?: string;
+          ...data,
+          createdById: userId,
+          imageUrl,
         },
-        userId: number,
-        imageUrl: string | null | undefined,
-        removeImage: boolean,
-    ) {
-        const title = await this.assertOwnership(id, userId).catch(
-            async (error) => {
-                await cleanupImageFile(imageUrl ?? null);
-                throw error;
-            },
-        );
+      });
+    } catch (error) {
+      await cleanupImageFile(imageUrl);
+      throw error;
+    }
+  }
 
-        let newImageUrl = title.imageUrl;
-        const oldImageUrl = title.imageUrl;
+  async update(
+    id: number,
+    data: {
+      name: string;
+      type: TitleType;
+      releaseYear?: number;
+      description?: string;
+    },
+    user: AuthUser,
+    imageUrl: string | null | undefined,
+    removeImage: boolean,
+  ) {
+    const title = await this.assertCanModify(id, user).catch(async (error) => {
+      await cleanupImageFile(imageUrl ?? null);
+      throw error;
+    });
 
-        if (removeImage) {
-            newImageUrl = null;
-        } else if (imageUrl !== undefined) {
-            newImageUrl = imageUrl;
-        }
+    let newImageUrl = title.imageUrl;
+    const oldImageUrl = title.imageUrl;
 
-        let updatedTitle: PrismaTitle;
-        try {
-            updatedTitle = await prisma.title.update({
-                where: { id },
-                data: {
-                    ...data,
-                    imageUrl: newImageUrl,
-                },
-            });
-        } catch (error) {
-            await cleanupImageFile(imageUrl ?? null);
-            throw error;
-        }
-
-        if (imageUrl && imageUrl !== newImageUrl)
-            await cleanupImageFile(imageUrl);
-        if (oldImageUrl && oldImageUrl !== newImageUrl)
-            await cleanupImageFile(oldImageUrl);
-
-        return updatedTitle;
+    if (removeImage) {
+      newImageUrl = null;
+    } else if (imageUrl !== undefined) {
+      newImageUrl = imageUrl;
     }
 
-    async remove(id: number, userId: number) {
-        const title = await this.assertOwnership(id, userId);
-        const deletedTitle = await prisma.title.delete({ where: { id } });
-        await cleanupImageFile(title.imageUrl);
-        return deletedTitle;
+    let updatedTitle: PrismaTitle;
+    try {
+      updatedTitle = await prisma.title.update({
+        where: { id },
+        data: {
+          ...data,
+          imageUrl: newImageUrl,
+        },
+      });
+    } catch (error) {
+      await cleanupImageFile(imageUrl ?? null);
+      throw error;
     }
+
+    if (imageUrl && imageUrl !== newImageUrl) await cleanupImageFile(imageUrl);
+    if (oldImageUrl && oldImageUrl !== newImageUrl)
+      await cleanupImageFile(oldImageUrl);
+
+    return updatedTitle;
+  }
+
+  async remove(id: number, user: AuthUser) {
+    const title = await this.assertCanModify(id, user);
+    const deletedTitle = await prisma.title.delete({ where: { id } });
+    await cleanupImageFile(title.imageUrl);
+    return deletedTitle;
+  }
 }
 
 export const titleService = new TitleService();
