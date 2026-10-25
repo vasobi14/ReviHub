@@ -1,15 +1,14 @@
 {
-    "compilerOptions": {
-        "module": "nodenext",
-        "moduleResolution": "nodenext",
-        "target": "es2022",
-        "sourceMap": true,
-        "outDir": "dist",
-        "rootDir": "src",
-        "incremental": true,
-        "skipLibCheck": true,
-        "esModuleInterop": true,
-        "strict": true
-    },
-    "include": ["src/**/*"]
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "target": "es2024",
+    "outDir": "dist",
+    "rootDir": "src",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "verbatimModuleSyntax": true
+  },
+  "include": ["src/**/*"]
 }

@@ -5,14 +5,14 @@ import { logger } from '../utils/logger.js';
 const resend = new Resend(config.resendApiKey);
 
 export async function sendVerificationEmail(
-    to: string,
-    code: string,
+  to: string,
+  code: string,
 ): Promise<void> {
-    const { error } = await resend.emails.send({
-        from: config.emailFrom,
-        to,
-        subject: 'Verify your email',
-        html: `
+  const { error } = await resend.emails.send({
+    from: config.emailFrom,
+    to,
+    subject: 'Verify your email',
+    html: `
             <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
                 <h2>Welcome to ReviHub!</h2>
                 <p>Your verification code is:</p>
@@ -23,10 +23,10 @@ export async function sendVerificationEmail(
                 <p>If you didn't request this, just ignore this email.</p>
             </div>
         `,
-    });
+  });
 
-    if (error) {
-        logger.error('Failed to send verification email', { error, to });
-        throw new Error('Failed to send verification email');
-    }
+  if (error) {
+    logger.error('Failed to send verification email', { error, to });
+    throw new Error('Failed to send verification email');
+  }
 }

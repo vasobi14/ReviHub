@@ -6,7 +6,7 @@
     "rules": {
       "preset": "recommended",
       "correctness": {
-        "noUnusedImports": "warn",
+        "noUnusedImports": "error",
         "noUnusedVariables": "warn"
       }
     }
@@ -23,8 +23,7 @@
     "formatter": {
       "jsxQuoteStyle": "double",
       "quoteStyle": "single",
-      "semicolons": "always",
-      "trailingCommas": "es5"
+      "semicolons": "always"
     }
   },
   "files": {

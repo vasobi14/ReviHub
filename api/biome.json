@@ -1,47 +1,38 @@
 {
-    "$schema": "https://biomejs.dev/schemas/2.5.14/schema.json",
-    "assist": { "actions": { "source": { "organizeImports": "on" } } },
-    "linter": {
-        "enabled": true,
-        "rules": {
-            "preset": "recommended",
-            "correctness": {
-                "noUnusedImports": "error",
-                "noUnusedVariables": "warn"
-            },
-            "style": {
-                "useNodejsImportProtocol": "off"
-            },
-            "suspicious": {
-                "noExplicitAny": "warn"
-            }
-        }
-    },
-    "formatter": {
-        "enabled": true,
-        "formatWithErrors": false,
-        "indentStyle": "space",
-        "indentWidth": 4,
-        "lineEnding": "lf"
-    },
-    "javascript": {
-        "formatter": {
-            "quoteStyle": "single",
-            "semicolons": "always",
-            "trailingCommas": "all"
-        }
-    },
-    "files": {
-        "ignoreUnknown": true,
-        "includes": [
-            "**",
-            "!**/dist",
-            "!**/build",
-            "!**/node_modules",
-            "!**/coverage",
-            "!src/generated",
-            "!**/package-lock.json",
-            "!**/prisma/seed.ts"
-        ]
+  "$schema": "https://biomejs.dev/schemas/2.5.14/schema.json",
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "correctness": {
+        "noUnusedImports": "error",
+        "noUnusedVariables": "warn"
+      },
+      "suspicious": {
+        "noExplicitAny": "warn"
+      }
     }
+  },
+  "formatter": {
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineEnding": "lf"
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "semicolons": "always"
+    }
+  },
+  "files": {
+    "ignoreUnknown": true,
+    "includes": [
+      "**",
+      "!**/dist",
+      "!**/node_modules",
+      "!src/generated",
+      "!**/package-lock.json"
+    ]
+  }
 }
