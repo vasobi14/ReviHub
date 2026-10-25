@@ -1,0 +1,45 @@
+.frame {
+  display: flex;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--surface-accent);
+}
+
+.movie {
+  --cover: var(--cover-movie);
+}
+
+.game {
+  --cover: var(--cover-game);
+}
+
+.book {
+  --cover: var(--cover-book);
+}
+
+.frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--cover) 55%, var(--bg-elevated)),
+    color-mix(in srgb, var(--cover) 12%, var(--bg-elevated))
+  );
+  color: var(--text-heading);
+}
+
+.icon {
+  width: 40%;
+  height: auto;
+  opacity: 0.35;
+}

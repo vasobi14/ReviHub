@@ -1,8 +1,10 @@
 {
   "name": "revihub-web",
   "type": "module",
-  "version": "0.1.0",
-  "private": true,
+  "version": "1.0",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "start": "vite",
     "build": "tsc && vite build",
@@ -13,7 +15,7 @@
     "lucide-react": "^1.48.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "react-router-dom": "^7.18.0",
+    "react-router": "^7.18.4",
     "swr": "^2.5.0"
   },
   "devDependencies": {

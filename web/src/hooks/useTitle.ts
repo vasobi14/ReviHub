@@ -1,6 +1,6 @@
 import useSWR from 'swr';
-import { apiFetch } from '../api';
-import type { Title } from '../types';
+import { apiFetch } from '../api/client';
+import type { Title } from '../api/types';
 
 export function useTitle(id: number | null) {
   const {

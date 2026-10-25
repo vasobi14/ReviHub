@@ -26,7 +26,6 @@
   border: 0;
 }
 
-/* 44px: a comfortable touch target */
 .category {
   display: inline-flex;
   align-items: center;
@@ -38,8 +37,11 @@
   color: var(--text);
 }
 
-.category[aria-pressed="true"],
-.category[aria-pressed="true"]:hover:not(:disabled) {
+.category:hover {
+  background: var(--bg-hover);
+}
+
+.category[aria-pressed="true"] {
   border-color: var(--success);
   background: var(--success);
   color: var(--on-success);
@@ -79,7 +81,6 @@
   white-space: nowrap;
 }
 
-/* 4, 3 or 2 columns: a page of 12 titles always fills whole rows */
 .titleList {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

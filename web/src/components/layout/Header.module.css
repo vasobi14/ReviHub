@@ -1,0 +1,82 @@
+.brandLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: inherit;
+}
+
+.brandLink:hover {
+  color: inherit;
+}
+
+.logoWindow {
+  display: block;
+  width: 64px;
+  height: 64px;
+}
+
+.logoWindow img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.brandName {
+  font-style: italic;
+  margin: 0;
+  font-size: 2.65rem;
+  line-height: 1;
+}
+
+.themeToggle {
+  display: inline-grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  padding: 0;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-left: auto;
+}
+
+/* 411-576px: the name doesn't fit next to the buttons. Below 410px the
+   buttons wrap to their own row, so there is room for it again */
+@media (max-width: 576px) {
+  .brandName {
+    display: none;
+  }
+}
+
+@media (max-width: 410px) {
+  .brandName {
+    display: block;
+  }
+
+  .actions {
+    align-self: center;
+    width: 100%;
+    justify-content: center;
+    gap: var(--space-sm);
+  }
+
+  .greeting {
+    display: none;
+  }
+}
+
+.adminLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.previewOn {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}

@@ -12,19 +12,21 @@ import {
   Route,
   Routes,
   useLocation,
-} from 'react-router-dom';
+} from 'react-router';
 import styles from './App.module.css';
-import { Footer } from './components/Footer';
+import { Footer } from './components/layout/Footer';
 import { useAuth } from './context/AuthContext';
-import CookiePage from './pages/CookiePage';
+import AdminAnalyticsPage from './pages/admin/AdminAnalyticsPage';
+import AdminPage from './pages/admin/AdminPage';
+import AdminUserPage from './pages/admin/AdminUserPage';
+import LoginPage from './pages/auth/LoginPage';
+import RegisterPage from './pages/auth/RegisterPage';
+import VerifyEmailPage from './pages/auth/VerifyEmailPage';
 import CreateTitlePage from './pages/CreateTitlePage';
 import HomePage from './pages/HomePage';
-import LoginPage from './pages/LoginPage';
+import LegalPage from './pages/LegalPage';
 import NotFoundPage from './pages/NotFoundPage';
-import PrivacyPage from './pages/PrivacyPage';
-import RegisterPage from './pages/RegisterPage';
 import TitlePage from './pages/TitlePage';
-import VerifyEmailPage from './pages/VerifyEmailPage';
 
 const ambientIcons = [
   { name: 'film', Icon: Film },
@@ -56,7 +58,7 @@ function RedirectAfterAuth() {
 }
 
 export default function App() {
-  const { user, authLoading } = useAuth();
+  const { user, authLoading, adminMode } = useAuth();
 
   if (authLoading) return <div className={styles.loading}>Loading...</div>;
 
@@ -79,9 +81,20 @@ export default function App() {
             path="/titles/new"
             element={user ? <CreateTitlePage /> : <Navigate to="/login" />}
           />
+          <Route
+            path="/admin"
+            element={adminMode ? <AdminPage /> : <NotFoundPage />}
+          />
+          <Route
+            path="/admin/analytics"
+            element={adminMode ? <AdminAnalyticsPage /> : <NotFoundPage />}
+          />
+          <Route
+            path="/admin/users/:id"
+            element={adminMode ? <AdminUserPage /> : <NotFoundPage />}
+          />
           <Route path="*" element={<NotFoundPage />} />
-          <Route path="/privacy" element={<PrivacyPage />} />
-          <Route path="/cookies" element={<CookiePage />} />
+          <Route path="/legal" element={<LegalPage />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
         </Routes>
         <Footer />

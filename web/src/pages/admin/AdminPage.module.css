@@ -1,0 +1,131 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.title {
+  margin: 0;
+}
+
+.lead {
+  margin: var(--space-xs) 0 0;
+  color: var(--text-muted);
+}
+
+.search {
+  flex: 0 1 320px;
+  min-height: 44px;
+  margin: 0;
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+}
+
+.table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.table th {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table tbody tr:hover {
+  background: var(--bg-hover);
+}
+
+.table .number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.name {
+  color: var(--text-heading);
+  font-weight: 600;
+}
+
+.email {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.badge,
+.adminBadge {
+  padding: 0 var(--space-xs);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+}
+
+.adminBadge {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.table .actions {
+  text-align: right;
+}
+
+.delete {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  border-color: transparent;
+  background: transparent;
+  color: var(--danger);
+}
+
+.delete:hover:not(:disabled) {
+  border-color: var(--danger);
+}
+
+.empty {
+  margin: 0;
+  padding: var(--space-lg);
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.nowrap {
+  white-space: nowrap;
+}

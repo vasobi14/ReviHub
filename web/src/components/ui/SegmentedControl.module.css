@@ -1,0 +1,48 @@
+.fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.legend {
+  margin-bottom: var(--space-xs);
+  padding: 0;
+}
+
+.group {
+  display: flex;
+  /* Options that no longer fit in one row wrap into a second one */
+  flex-wrap: wrap;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--filter-bg);
+}
+
+.option {
+  display: inline-flex;
+  flex: 1 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  min-height: 36px;
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid transparent;
+  border-radius: calc(var(--radius-sm) - 3px);
+  background: transparent;
+  color: var(--text-muted);
+  white-space: nowrap;
+  transform: none;
+}
+
+.option:hover {
+  color: var(--text);
+}
+
+.option[aria-pressed="true"] {
+  border-color: var(--border-strong);
+  background: var(--bg-elevated);
+  color: var(--text-heading);
+  font-weight: 600;
+}

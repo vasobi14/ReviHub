@@ -152,8 +152,10 @@ button,
     border-color 0.15s ease;
 }
 
-button:hover:not(:disabled),
-.button-link:hover {
+/* :where() keeps this at the weight of a bare tag: it beats the base button
+   style above, but any class in a component overrides it */
+button:where(:hover:not(:disabled)),
+.button-link:where(:hover) {
   transform: translateY(-1px);
   border-color: var(--border-hover);
   background: var(--bg-hover);
@@ -181,7 +183,6 @@ input,
 textarea,
 select {
   width: 100%;
-  margin-top: var(--space-sm);
   padding: var(--space-sm);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -216,12 +217,6 @@ select:focus-visible {
   text-align: left;
 }
 
-.field input,
-.field select,
-.field textarea {
-  margin-top: 0;
-}
-
 .field-label {
   color: var(--text-heading);
   font-size: 0.9rem;
@@ -246,8 +241,7 @@ select:focus-visible {
   gap: var(--space-sm);
 }
 
-.button-text,
-.button-text:hover:not(:disabled) {
+.button-text {
   display: inline-flex;
   align-items: center;
   gap: var(--space-xs);

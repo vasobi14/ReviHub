@@ -1,18 +1,18 @@
 import { ArrowLeft, Star } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { deleteTitle, updateTitle } from '../api';
-import { Header } from '../components/Header';
-import { Pagination } from '../components/Pagination';
-import ReviewCreateForm from '../components/ReviewCreateForm';
-import ReviewList from '../components/ReviewList';
-import TitleForm from '../components/TitleForm';
-import { TitleImage } from '../components/TitleImage';
+import { Link, useLocation, useNavigate, useParams } from 'react-router';
+import { deleteTitle, updateTitle } from '../api/client';
+import { Header } from '../components/layout/Header';
+import ReviewCreateForm from '../components/reviews/ReviewCreateForm';
+import ReviewList from '../components/reviews/ReviewList';
+import TitleForm from '../components/titles/TitleForm';
+import { TitleImage } from '../components/titles/TitleImage';
+import { TITLE_TYPES } from '../components/titles/titleTypes';
+import { Pagination } from '../components/ui/Pagination';
 import { useAuth } from '../context/AuthContext';
 import { useMyReview } from '../hooks/useMyReview';
 import { useReviews } from '../hooks/useReviews';
 import { useTitle } from '../hooks/useTitle';
-import { TITLE_TYPES } from '../titleTypes';
 import { getErrorMessage } from '../utils/error';
 import styles from './TitlePage.module.css';
 
@@ -25,7 +25,7 @@ export default function TitlePage() {
   const location = useLocation();
   const previousLocation =
     (location.state as { from?: string } | null)?.from ?? '/';
-  const { user } = useAuth();
+  const { user, adminMode } = useAuth();
   const { id } = useParams<{ id: string }>();
   const titleId = id ? Number(id) : null;
   const { data: title, error, mutate } = useTitle(titleId);
@@ -51,7 +51,7 @@ export default function TitlePage() {
     void mutate();
   };
 
-  const canEdit = user?.id === title?.createdById;
+  const canEdit = user?.id === title?.createdById || adminMode;
   const handleBack = () => navigate(previousLocation, { replace: true });
   const handleDeleteTitle = async () => {
     if (!title) return;

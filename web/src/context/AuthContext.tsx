@@ -5,14 +5,14 @@ import {
   useEffect,
   useState,
 } from 'react';
+import { refreshAccessToken, setAccessToken } from '../api/auth';
 import {
   login as apiLogin,
   logout as apiLogout,
   register as apiRegister,
   fetchMe,
-} from '../api';
-import { refreshAccessToken, setAccessToken } from '../auth';
-import type { User } from '../types';
+} from '../api/client';
+import type { User } from '../api/types';
 
 interface AuthContextValue {
   user: User | null;
@@ -20,13 +20,41 @@ interface AuthContextValue {
   register: (email: string, password: string, name?: string) => Promise<void>;
   authLoading: boolean;
   logout: () => Promise<void>;
+  // The user's role is ADMIN
+  isAdmin: boolean;
+  // Admin features are shown: an admin who is not previewing the user view
+  adminMode: boolean;
+  viewAsUser: boolean;
+  toggleViewAsUser: () => void;
 }
+
+const VIEW_AS_USER_KEY = 'reviews-view-as-user';
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [viewAsUser, setViewAsUser] = useState(() => {
+    try {
+      return sessionStorage.getItem(VIEW_AS_USER_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
+
+  const isAdmin = user?.role === 'ADMIN';
+  const adminMode = isAdmin && !viewAsUser;
+
+  // Only changes what the UI shows: the API still treats the user as an admin
+  const toggleViewAsUser = () => {
+    const next = !viewAsUser;
+    setViewAsUser(next);
+    try {
+      if (next) sessionStorage.setItem(VIEW_AS_USER_KEY, '1');
+      else sessionStorage.removeItem(VIEW_AS_USER_KEY);
+    } catch {}
+  };
 
   useEffect(() => {
     (async () => {
@@ -69,7 +97,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, login, register, authLoading, logout }}
+      value={{
+        user,
+        login,
+        register,
+        authLoading,
+        logout,
+        adminMode,
+        isAdmin,
+        viewAsUser,
+        toggleViewAsUser,
+      }}
     >
       {children}
     </AuthContext.Provider>

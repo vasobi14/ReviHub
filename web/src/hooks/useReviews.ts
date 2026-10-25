@@ -1,14 +1,14 @@
 import { useMemo } from 'react';
 import useSWR from 'swr';
-import { apiFetch } from '../api';
-import type { PaginatedResponse, Review } from '../types';
+import { apiFetch } from '../api/client';
+import type { PaginatedResponse, Review } from '../api/types';
 
 const fetcher = (url: string) => apiFetch<PaginatedResponse<Review>>(url);
 
 export function useReviews(
   titleId: number | undefined,
   page: number,
-  excludeUserId?: number
+  excludeUserId?: number,
 ) {
   const query = useMemo(() => {
     const params = [`page=${page}`];
@@ -22,7 +22,7 @@ export function useReviews(
     fetcher,
     {
       keepPreviousData: true,
-    }
+    },
   );
 
   return {

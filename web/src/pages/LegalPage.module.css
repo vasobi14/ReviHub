@@ -1,0 +1,31 @@
+.page {
+  max-width: 70ch;
+  margin: 0 auto;
+}
+
+.page h1 {
+  margin: 0;
+}
+
+.page section {
+  scroll-margin-top: var(--space-lg);
+}
+
+.page h2 {
+  margin: var(--space-xl) 0 var(--space-sm);
+}
+
+.page p {
+  margin: 0 0 var(--space-md);
+}
+
+.updated {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}

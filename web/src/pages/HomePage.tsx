@@ -1,13 +1,13 @@
 import { BookOpen, CircleStar, Film, Gamepad2, Plus } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { Header } from '../components/Header';
-import { Pagination } from '../components/Pagination';
-import SegmentedControl from '../components/SegmentedControl';
-import TitleCard, { TitleCardSkeleton } from '../components/TitleCard';
+import { Link, useSearchParams } from 'react-router';
+import type { TitleSort } from '../api/types';
+import { Header } from '../components/layout/Header';
+import TitleCard, { TitleCardSkeleton } from '../components/titles/TitleCard';
+import { Pagination } from '../components/ui/Pagination';
+import SegmentedControl from '../components/ui/SegmentedControl';
 import { useAuth } from '../context/AuthContext';
 import { useTitles } from '../hooks/useTitles';
-import type { TitleSort } from '../types';
 import styles from './HomePage.module.css';
 
 const CATEGORIES = [
@@ -18,7 +18,8 @@ const CATEGORIES = [
 ];
 
 const SORTS: { value: TitleSort; label: string }[] = [
-  { value: 'new', label: 'Newest' },
+  { value: 'new', label: 'Recently added' },
+  { value: 'year', label: 'Release year' },
   { value: 'popular', label: 'Popular' },
   { value: 'rating', label: 'Top rated' },
 ];
@@ -48,10 +49,10 @@ export default function HomePage() {
           next.delete('page');
           return next;
         },
-        { replace: true }
+        { replace: true },
       );
     },
-    [setSearchParams]
+    [setSearchParams],
   );
 
   useEffect(() => {
@@ -74,7 +75,7 @@ export default function HomePage() {
         else next.set('page', String(newPage));
         return next;
       },
-      { replace: true }
+      { replace: true },
     );
   };
 

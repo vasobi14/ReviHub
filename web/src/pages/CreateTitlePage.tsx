@@ -1,7 +1,7 @@
-import { useNavigate } from 'react-router-dom';
-import { createTitle } from '../api';
-import { Header } from '../components/Header';
-import TitleForm from '../components/TitleForm';
+import { useNavigate } from 'react-router';
+import { createTitle } from '../api/client';
+import { Header } from '../components/layout/Header';
+import TitleForm from '../components/titles/TitleForm';
 import styles from './CreateTitlePage.module.css';
 
 export default function CreateTitlePage() {
