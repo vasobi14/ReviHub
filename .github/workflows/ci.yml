@@ -142,7 +142,11 @@ jobs:
             git fetch origin main
             git checkout --force ${{ github.sha }}
 
-            export IMAGE_TAG=${{ github.sha }}
+            # Compose reads .env when parsing the file, so manual commands on
+            # the server (exec, up) use the deployed images without an export.
+            # sed drops the old tag; $a\ adds a final newline if .env lacks one
+            sed -i -e '/^IMAGE_TAG=/d' -e '$a\' .env
+            echo "IMAGE_TAG=${{ github.sha }}" >> .env
             docker compose -f docker-compose.prod.yml pull
 
             fail() {
