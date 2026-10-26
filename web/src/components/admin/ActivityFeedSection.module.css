@@ -1,0 +1,17 @@
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.toggle input {
+  width: auto;
+}
+
+.more {
+  display: block;
+  margin: var(--space-md) auto 0;
+}

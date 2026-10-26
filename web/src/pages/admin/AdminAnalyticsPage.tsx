@@ -1,18 +1,16 @@
-import { useState } from 'react';
 import { Link } from 'react-router';
 import useSWR from 'swr';
 import { apiFetch } from '../../api/client';
 import type { AnalyticsSummary } from '../../api/types';
-import ActivityFeed from '../../components/admin/ActivityFeed';
+import ActivityFeedSection from '../../components/admin/ActivityFeedSection';
 import AdminNav from '../../components/admin/AdminNav';
 import { Header } from '../../components/layout/Header';
 import { getErrorMessage } from '../../utils/error';
 import styles from './AdminAnalytics.module.css';
 
 export default function AdminAnalyticsPage() {
-  const [technical, setTechnical] = useState(false);
   const { data, error, isLoading } = useSWR<AnalyticsSummary>(
-    `/admin/analytics${technical ? '?technical=true' : ''}`,
+    '/admin/analytics',
     apiFetch,
   );
 
@@ -70,15 +68,7 @@ export default function AdminAnalyticsPage() {
 
           <section className={styles.section}>
             <h2>Recent activity</h2>
-            <label className={styles.toggle}>
-              <input
-                type="checkbox"
-                checked={technical}
-                onChange={(e) => setTechnical(e.target.checked)}
-              />
-              Show technical requests
-            </label>
-            <ActivityFeed entries={data.recent} showUser />
+            <ActivityFeedSection showUser />
           </section>
         </>
       )}

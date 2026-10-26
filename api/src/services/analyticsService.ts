@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import config from '../config/env.js';
-import type { RequestLog } from '../generated/prisma/client.js';
+import type { Prisma, RequestLog } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { logger } from '../utils/logger.js';
@@ -144,8 +144,36 @@ async function toActivity(rows: RequestLog[]) {
   });
 }
 
-const isActivity = (row: RequestLog) =>
-  ACTIVITY_ROUTES.includes(`${row.method} ${row.route}`);
+const FEED_PAGE_SIZE = 50;
+
+// WHERE (method = 'GET' AND route = '/titles')
+//    OR (method = 'GET' AND route = '/titles/:id')
+//    OR ...
+const ACTIVITY_WHERE: Prisma.RequestLogWhereInput = {
+  OR: ACTIVITY_ROUTES.map((entry) => {
+    const [method, route] = entry.split(' ');
+    return { method, route };
+  }),
+};
+
+// The user's requests, plus anonymous ones from the same browser and
+// network: what they did before logging in
+// WHERE "userId" = 7
+//    OR ("userId" IS NULL AND "visitorId" IN ('a1b2…', 'c3d4…'))
+async function requestsOf(
+  userId: number,
+): Promise<Prisma.RequestLogWhereInput> {
+  const visitors = await prisma.requestLog.groupBy({
+    by: ['visitorId'],
+    where: { userId },
+  });
+  return {
+    OR: [
+      { userId },
+      { userId: null, visitorId: { in: visitors.map((v) => v.visitorId) } },
+    ],
+  };
+}
 
 async function countVisitors(since: Date) {
   const [requests, visitors, users] = await Promise.all([
@@ -163,12 +191,11 @@ async function countVisitors(since: Date) {
 }
 
 export class AnalyticsService {
-  // technical: include session refreshes, review list loads and the like
-  async summary(technical = false) {
+  async summary() {
     const now = Date.now();
     const weekAgo = new Date(now - 7 * DAY_MS);
 
-    const [day, week, topPaths, recent] = await Promise.all([
+    const [day, week, topPaths] = await Promise.all([
       countVisitors(new Date(now - DAY_MS)),
       countVisitors(weekAgo),
       prisma.requestLog.groupBy({
@@ -182,10 +209,6 @@ export class AnalyticsService {
         _count: { path: true },
         orderBy: { _count: { path: 'desc' } },
         take: 10,
-      }),
-      prisma.requestLog.findMany({
-        orderBy: { createdAt: 'desc' },
-        take: 300,
       }),
     ]);
 
@@ -206,15 +229,10 @@ export class AnalyticsService {
           return { id, name: names.get(id), views: row._count.path };
         })
         .filter((title) => title.name !== undefined),
-      recent: await toActivity(
-        (technical ? recent : recent.filter(isActivity)).slice(0, 50),
-      ),
     };
   }
 
-  // The user's requests, plus anonymous ones from the same browser and
-  // network: what they did before logging in
-  async userActivity(userId: number, technical = false) {
+  async userSummary(userId: number) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -229,32 +247,48 @@ export class AnalyticsService {
       throw new AppError(404, 'User not found', 'NOT_FOUND');
     }
 
-    const visitors = await prisma.requestLog.groupBy({
-      by: ['visitorId'],
-      where: { userId },
-    });
-    const rows = await prisma.requestLog.findMany({
-      where: {
-        OR: [
-          { userId },
-          {
-            userId: null,
-            visitorId: { in: visitors.map((v) => v.visitorId) },
-          },
-        ],
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 500,
-    });
+    const [last, requests] = await Promise.all([
+      prisma.requestLog.findFirst({
+        where: { userId },
+        orderBy: { id: 'desc' },
+        select: { createdAt: true },
+      }),
+      prisma.requestLog.count({ where: { userId } }),
+    ]);
 
     return {
       enabled: analyticsEnabled,
       user,
-      lastSeen: rows.find((row) => row.userId === userId)?.createdAt ?? null,
-      requests: rows.filter((row) => row.userId === userId).length,
-      activity: await toActivity(
-        (technical ? rows : rows.filter(isActivity)).slice(0, 100),
-      ),
+      lastSeen: last?.createdAt ?? null,
+      requests,
+    };
+  }
+
+  // One page of the feed, newest first. before: the id the previous page
+  // ended at; technical: include session refreshes, review list loads and
+  // the like
+  async feed(options: {
+    userId?: number;
+    technical: boolean;
+    before?: number;
+  }) {
+    const { userId, technical, before } = options;
+    const where: Prisma.RequestLogWhereInput[] = [];
+    if (userId !== undefined) where.push(await requestsOf(userId));
+    if (!technical) where.push(ACTIVITY_WHERE);
+    if (before !== undefined) where.push({ id: { lt: before } });
+
+    // One extra row tells whether there is a next page
+    const rows = await prisma.requestLog.findMany({
+      where: { AND: where },
+      orderBy: { id: 'desc' },
+      take: FEED_PAGE_SIZE + 1,
+    });
+    const page = rows.slice(0, FEED_PAGE_SIZE);
+
+    return {
+      entries: await toActivity(page),
+      nextCursor: rows.length > FEED_PAGE_SIZE ? page.at(-1)?.id : null,
     };
   }
 }

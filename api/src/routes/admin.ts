@@ -15,6 +15,8 @@ const feedQuerySchema = z.object({
     .enum(['true', 'false'])
     .optional()
     .transform((value) => value === 'true'),
+  userId: z.coerce.number().int().positive().optional(),
+  before: z.coerce.number().int().positive().optional(),
 });
 
 const router = Router();
@@ -35,16 +37,20 @@ router.delete('/users/:id', async (req, res) => {
 });
 
 // GET /admin/analytics
-router.get('/analytics', async (req, res) => {
-  const { technical } = feedQuerySchema.parse(req.query);
-  res.json(await analyticsService.summary(technical));
+router.get('/analytics', async (_req, res) => {
+  res.json(await analyticsService.summary());
 });
 
-// GET /admin/users/:id/activity
-router.get('/users/:id/activity', async (req, res) => {
+// GET /admin/analytics/feed?technical=&userId=&before=
+router.get('/analytics/feed', async (req, res) => {
+  const query = feedQuerySchema.parse(req.query);
+  res.json(await analyticsService.feed(query));
+});
+
+// GET /admin/users/:id
+router.get('/users/:id', async (req, res) => {
   const id = paramSchema.parse(req.params.id);
-  const { technical } = feedQuerySchema.parse(req.query);
-  res.json(await analyticsService.userActivity(id, technical));
+  res.json(await analyticsService.userSummary(id));
 });
 
 export default router;

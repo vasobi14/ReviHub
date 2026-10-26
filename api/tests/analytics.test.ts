@@ -78,6 +78,23 @@ describe('Request log', () => {
 
     expect(await prisma.requestLog.count()).toBe(0);
   });
+
+  it('skips viewing a user in the admin panel but records deleting one', async () => {
+    const admin = await createTestUser({ role: 'ADMIN' });
+    const user = await createTestUser();
+    const api = await authenticatedRequest(admin.id);
+
+    await api.get(`/admin/users/${user.id}`);
+    await api.delete(`/admin/users/${user.id}`);
+    await flushRequestLog();
+
+    const entries = await prisma.requestLog.findMany();
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toMatchObject({
+      method: 'DELETE',
+      route: '/admin/users/:id',
+    });
+  });
 });
 
 describe('Admin analytics', () => {
@@ -90,21 +107,20 @@ describe('Admin analytics', () => {
     const api = await authenticatedRequest(user.id);
 
     expect((await api.get('/admin/analytics')).status).toBe(403);
-    expect((await api.get(`/admin/users/${user.id}/activity`)).status).toBe(
-      403,
-    );
+    expect((await api.get(`/admin/users/${user.id}`)).status).toBe(403);
+    expect((await api.get('/admin/analytics/feed')).status).toBe(403);
   });
 
-  it('shows totals, top titles and recent activity with readable IPs', async () => {
+  it('shows totals, top titles and a feed with readable IPs', async () => {
     const admin = await createTestUser({ role: 'ADMIN' });
     const title = await createTestTitle({ name: 'Popular one' });
     await request(app).get(`/titles/${title.id}`);
     await request(app).get(`/titles/${title.id}`);
     await flushRequestLog();
+    const api = await authenticatedRequest(admin.id);
 
-    const res = await (await authenticatedRequest(admin.id)).get(
-      '/admin/analytics',
-    );
+    const res = await api.get('/admin/analytics');
+    const feed = await api.get('/admin/analytics/feed');
 
     expect(res.status).toBe(200);
     expect(res.body.day.requests).toBe(2);
@@ -112,8 +128,8 @@ describe('Admin analytics', () => {
       name: 'Popular one',
       views: 2,
     });
-    expect(res.body.recent[0].titleName).toBe('Popular one');
-    expect(res.body.recent[0].ip).toMatch(/127\.0\.0\.1/);
+    expect(feed.body.entries[0].titleName).toBe('Popular one');
+    expect(feed.body.entries[0].ip).toMatch(/127\.0\.0\.1/);
   });
 
   it('lists technical requests only when asked to', async () => {
@@ -123,11 +139,11 @@ describe('Admin analytics', () => {
     await flushRequestLog();
     const api = await authenticatedRequest(admin.id);
 
-    const actions = await api.get('/admin/analytics');
-    const all = await api.get('/admin/analytics?technical=true');
+    const actions = await api.get('/admin/analytics/feed');
+    const all = await api.get('/admin/analytics/feed?technical=true');
 
-    const routes = (body: { recent: { route: string }[] }) =>
-      body.recent.map((entry) => entry.route);
+    const routes = (body: { entries: { route: string }[] }) =>
+      body.entries.map((entry) => entry.route);
     expect(routes(actions.body)).not.toContain('/auth/me');
     expect(routes(all.body)).toContain('/auth/me');
   });
@@ -145,15 +161,42 @@ describe('Admin analytics', () => {
       .set('Authorization', `Bearer ${createToken(user.id)}`);
     await flushRequestLog();
 
-    const res = await (await authenticatedRequest(admin.id)).get(
-      `/admin/users/${user.id}/activity`,
-    );
+    const api = await authenticatedRequest(admin.id);
+
+    const res = await api.get(`/admin/users/${user.id}`);
+    const feed = await api.get(`/admin/analytics/feed?userId=${user.id}`);
 
     expect(res.status).toBe(200);
     expect(res.body.requests).toBe(1);
-    const anonymous = res.body.activity.find(
+    const anonymous = feed.body.entries.find(
       (entry: { userId: number | null }) => entry.userId === null,
     );
     expect(anonymous.titleName).toBe('Seen before login');
+  });
+
+  it('pages through older entries', async () => {
+    const admin = await createTestUser({ role: 'ADMIN' });
+    await prisma.requestLog.createMany({
+      data: Array.from({ length: 51 }, () => ({
+        method: 'GET',
+        path: '/titles',
+        route: '/titles',
+        status: 200,
+        durationMs: 1,
+        visitorId: 'visitor',
+        ipEncrypted: '',
+      })),
+    });
+    const api = await authenticatedRequest(admin.id);
+
+    const first = await api.get('/admin/analytics/feed');
+    const second = await api.get(
+      `/admin/analytics/feed?before=${first.body.nextCursor}`,
+    );
+
+    expect(first.body.entries).toHaveLength(50);
+    expect(second.body.entries).toHaveLength(1);
+    expect(second.body.entries[0].id).toBeLessThan(first.body.nextCursor);
+    expect(second.body.nextCursor).toBeNull();
   });
 });

@@ -1,9 +1,8 @@
-import { useState } from 'react';
 import { useParams } from 'react-router';
 import useSWR from 'swr';
 import { apiFetch } from '../../api/client';
-import type { UserActivity } from '../../api/types';
-import ActivityFeed from '../../components/admin/ActivityFeed';
+import type { UserSummary } from '../../api/types';
+import ActivityFeedSection from '../../components/admin/ActivityFeedSection';
 import AdminNav from '../../components/admin/AdminNav';
 import { Header } from '../../components/layout/Header';
 import Avatar from '../../components/ui/Avatar';
@@ -19,10 +18,9 @@ const dateFormat = new Intl.DateTimeFormat('en-US', {
 });
 
 export default function AdminUserPage() {
-  const [technical, setTechnical] = useState(false);
   const { id } = useParams<{ id: string }>();
-  const { data, error, isLoading } = useSWR<UserActivity>(
-    `/admin/users/${id}/activity${technical ? '?technical=true' : ''}`,
+  const { data, error, isLoading } = useSWR<UserSummary>(
+    `/admin/users/${id}`,
     apiFetch,
   );
 
@@ -75,15 +73,7 @@ export default function AdminUserPage() {
               Includes guest visits from the same browser and network before
               logging in.
             </p>
-            <label className={styles.toggle}>
-              <input
-                type="checkbox"
-                checked={technical}
-                onChange={(e) => setTechnical(e.target.checked)}
-              />
-              Show technical requests
-            </label>
-            <ActivityFeed entries={data.activity} />
+            <ActivityFeedSection userId={data.user.id} />
           </section>
         </>
       )}

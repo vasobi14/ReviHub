@@ -76,10 +76,15 @@ export interface AnalyticsSummary {
   day: Totals;
   week: Totals;
   topTitles: { id: number; name: string; views: number }[];
-  recent: ActivityEntry[];
 }
 
-export interface UserActivity {
+export interface ActivityPage {
+  entries: ActivityEntry[];
+  // Pass as ?before= to get the next, older page; null on the last one
+  nextCursor: number | null;
+}
+
+export interface UserSummary {
   enabled: boolean;
   user: {
     id: number;
@@ -90,5 +95,4 @@ export interface UserActivity {
   };
   lastSeen: string | null;
   requests: number;
-  activity: ActivityEntry[];
 }

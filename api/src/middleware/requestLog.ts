@@ -6,8 +6,9 @@ import {
   recordRequest,
 } from '../services/analyticsService.js';
 
-const SKIP =
-  /^\/(health|uploads)\b|^\/admin\/(analytics|users\/\d+\/activity)\b/;
+// Only GET requests are skipped: DELETE /admin/users/:id shares the path
+// with the user page and is an action worth logging
+const SKIP = /^\/(health|uploads)\b|^\/admin\/(analytics\b|users\/\d+$)/;
 
 function userIdOf(authorization: string | undefined) {
   if (!authorization?.startsWith('Bearer ')) return null;
@@ -23,7 +24,11 @@ function userIdOf(authorization: string | undefined) {
 }
 
 export const requestLog: RequestHandler = (req, res, next) => {
-  if (!analyticsEnabled || req.method === 'OPTIONS' || SKIP.test(req.path)) {
+  if (
+    !analyticsEnabled ||
+    req.method === 'OPTIONS' ||
+    (req.method === 'GET' && SKIP.test(req.path))
+  ) {
     return next();
   }
 
