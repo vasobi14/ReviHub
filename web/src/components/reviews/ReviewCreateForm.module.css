@@ -1,5 +1,6 @@
 .panel {
   padding: var(--space-lg);
+  justify-items: center;
 }
 
 .heading {

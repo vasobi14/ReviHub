@@ -6,6 +6,7 @@
   border-left: none;
   border-radius: var(--radius-md);
   background: var(--bg-elevated);
+  text-align: center;
 }
 
 .header {
@@ -68,6 +69,11 @@
 
 .text {
   margin: var(--space-sm) 0;
+}
+
+.noText {
+  color: var(--text-muted);
+  font-style: italic;
 }
 
 .actions {

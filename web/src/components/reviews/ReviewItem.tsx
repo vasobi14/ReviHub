@@ -114,7 +114,13 @@ export default function ReviewItem({
             )}
           </div>
 
-          {r.text && <p className={styles.text}>{r.text}</p>}
+          {r.text?.trim() ? (
+            <p className={styles.text}>{r.text}</p>
+          ) : (
+            <p className={`${styles.text} ${styles.noText}`}>
+              Rated without a comment
+            </p>
+          )}
           {error && <div className="error-message">{error}</div>}
         </>
       )}
