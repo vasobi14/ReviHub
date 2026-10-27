@@ -125,6 +125,16 @@ export async function login(email: string, password: string) {
   return data;
 }
 
+export async function loginDemo(key: string) {
+  return apiFetch<{
+    accessToken: string;
+    user: import('./types').User;
+  }>('/auth/demo', {
+    method: 'POST',
+    body: JSON.stringify({ key }),
+  });
+}
+
 export async function register(email: string, password: string, name?: string) {
   await apiFetch('/auth/register', {
     method: 'POST',

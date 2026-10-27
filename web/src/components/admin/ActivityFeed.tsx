@@ -35,6 +35,8 @@ function describe(entry: ActivityEntry) {
       return failed ? 'Failed to register' : 'Registered';
     case 'POST /auth/login':
       return failed ? 'Failed to log in' : 'Logged in';
+    case 'POST /auth/demo':
+      return failed ? 'Used an invalid demo link' : 'Opened the demo';
     case 'POST /auth/logout':
       return 'Logged out';
     case 'POST /auth/verify-email':

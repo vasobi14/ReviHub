@@ -9,6 +9,16 @@ const rateLimitHandler = (_req: Request, res: Response) => {
   });
 };
 
+export const demoLoginRateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  limit: 20,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+
+  identifier: 'auth-demo',
+  handler: rateLimitHandler,
+});
+
 export const loginRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   limit: 5,

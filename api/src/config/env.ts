@@ -20,6 +20,10 @@ const envSchema = z.object({
     .string()
     .regex(/^[0-9a-f]{64}$/i, 'ANALYTICS_KEY must be 64 hex characters')
     .optional(),
+  DEMO_LOGIN_KEY: z
+    .string()
+    .min(32, 'DEMO_LOGIN_KEY must be at least 32 characters')
+    .optional(),
 });
 
 const env = envSchema.parse(process.env);
@@ -39,6 +43,7 @@ const config = {
   resendApiKey: env.RESEND_API_KEY,
   emailFrom: env.EMAIL_FROM,
   analyticsKey: env.ANALYTICS_KEY,
+  demoLoginKey: env.DEMO_LOGIN_KEY,
 };
 
 export default config;

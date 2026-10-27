@@ -121,11 +121,11 @@ export default function AdminPage() {
                       </div>
                     </td>
                     <td>
-                      {u.role === 'ADMIN' ? (
+                      {u.role === 'ADMIN' && (
                         <span className={styles.adminBadge}>Admin</span>
-                      ) : (
-                        'User'
                       )}
+                      {u.role === 'DEMO' && 'Demo'}
+                      {u.role === 'USER' && 'User'}
                     </td>
                     <td className={styles.nowrap}>
                       {dateFormat.format(new Date(u.createdAt))}

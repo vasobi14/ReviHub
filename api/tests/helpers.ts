@@ -30,7 +30,7 @@ export async function createTestUser(data?: {
   password?: string;
   name?: string;
   emailVerified?: boolean;
-  role?: 'USER' | 'ADMIN';
+  role?: 'USER' | 'ADMIN' | 'DEMO';
 }) {
   const email = data?.email ?? `user${Date.now()}${Math.random()}@test.com`;
   const password = data?.password ?? 'password123';
@@ -50,7 +50,7 @@ export async function deleteUser(id: number) {
 
 export function createToken(
   userId: number,
-  role: 'USER' | 'ADMIN' = 'USER',
+  role: 'USER' | 'ADMIN' | 'DEMO' = 'USER',
 ): string {
   return jwt.sign({ sub: String(userId), role }, config.jwtSecret, {
     expiresIn: '7d',

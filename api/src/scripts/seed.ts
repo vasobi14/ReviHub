@@ -1,62 +1,19 @@
-// Adds demo titles, reviewers and reviews, plus the demo account; existing
-// data stays and titles that already exist are skipped
+// Adds demo titles, reviewers and reviews; existing data stays and titles
+// that already exist are skipped. Demo accounts come from the demo link
+// (POST /auth/demo)
 //   dev:    npm run seed
 //   server: docker compose -f docker-compose.prod.yml exec api node dist/scripts/seed.js
 import crypto from 'node:crypto';
-import readline from 'node:readline';
 import * as bcrypt from 'bcryptjs';
 import { prisma } from '../lib/prisma.js';
 import { updateTitleStats } from '../services/reviewService.js';
 import { REVIEWERS, TITLES } from './seedData.js';
 
-const DEMO_EMAIL = 'demo@example.com';
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
 
 const emailOf = (name: string) =>
   `${name.toLowerCase().replace(/\s+/g, '.')}@example.com`;
-
-async function ensureDemoAccount() {
-  const existing = await prisma.user.findUnique({
-    where: { email: DEMO_EMAIL },
-  });
-  if (existing) {
-    console.log(`${DEMO_EMAIL} already exists, password unchanged`);
-    return;
-  }
-
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-  rl.setPrompt(`Password for ${DEMO_EMAIL}: `);
-  rl.prompt();
-
-  let password = '';
-  for await (const line of rl) {
-    if (line.length >= 8 && Buffer.byteLength(line) <= 72) {
-      password = line;
-      break;
-    }
-    console.log('Use at least 8 characters and at most 72 bytes.');
-    rl.prompt();
-  }
-  rl.close();
-  if (!password) {
-    console.error('No password entered, demo account not created');
-    process.exit(1);
-  }
-
-  await prisma.user.create({
-    data: {
-      email: DEMO_EMAIL,
-      name: 'Demo',
-      passwordHash: await bcrypt.hash(password, 10),
-      emailVerified: true,
-    },
-  });
-  console.log(`Created ${DEMO_EMAIL}`);
-}
 
 // Fictional reviewers with random passwords
 async function ensureReviewers() {
@@ -133,7 +90,6 @@ async function addTitles(reviewerIds: number[]) {
   return { added, reviews };
 }
 
-await ensureDemoAccount();
 const reviewerIds = await ensureReviewers();
 const { added, reviews } = await addTitles(reviewerIds);
 console.log(

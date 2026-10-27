@@ -1,8 +1,11 @@
 import type { NextFunction, Request, Response } from 'express';
 import jwt, { type JwtPayload } from 'jsonwebtoken';
 import config from '../config/env.js';
+import { Role } from '../generated/prisma/client.js';
 import type { AuthUser } from '../types/user.types.js';
 import { AppError } from './errorHandler.js';
+
+const ROLES: unknown[] = Object.values(Role);
 
 export function getAuthUser(req: Request): AuthUser {
   if (!req.user) {
@@ -35,7 +38,7 @@ function getUserFromToken(decoded: JwtPayload): AuthUser {
     throw invalid;
   }
 
-  if (decoded.role !== 'USER' && decoded.role !== 'ADMIN') {
+  if (!ROLES.includes(decoded.role)) {
     throw invalid;
   }
 

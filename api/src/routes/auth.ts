@@ -4,6 +4,7 @@ import config from '../config/env.js';
 import { authMiddleware, getAuthUser } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
 import {
+  demoLoginRateLimiter,
   loginRateLimiter,
   registerRateLimiter,
   resendVerificationRateLimiter,
@@ -32,6 +33,10 @@ const verifyEmailSchema = z.object({
 
 const resendVerificationSchema = z.object({
   email: z.email(),
+});
+
+const demoSchema = z.object({
+  key: z.string().min(1).max(200),
 });
 
 const REFRESH_COOKIE_NAME = 'refreshToken';
@@ -64,6 +69,16 @@ router.post('/login', loginRateLimiter, async (req, res) => {
   res.locals.userId = user.id;
   res.cookie(REFRESH_COOKIE_NAME, refreshToken, REFRESH_COOKIE_OPTIONS);
   res.json({ accessToken, user });
+});
+
+// POST /auth/demo
+router.post('/demo', demoLoginRateLimiter, async (req, res) => {
+  const { key } = demoSchema.parse(req.body);
+  const { accessToken, refreshToken, user } = await authService.loginDemo(key);
+
+  res.locals.userId = user.id;
+  res.cookie(REFRESH_COOKIE_NAME, refreshToken, REFRESH_COOKIE_OPTIONS);
+  res.status(201).json({ accessToken, user });
 });
 
 // POST /auth/verify-email

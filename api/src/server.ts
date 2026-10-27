@@ -7,9 +7,18 @@ import {
   deleteOldRequests,
   flushRequestLog,
 } from './services/analyticsService.js';
+import { deleteOldDemoAccounts } from './services/demoService.js';
 import { logger } from './utils/logger.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+// Runs the task now and then once a day.
+function runDaily(name: string, task: () => Promise<void>) {
+  const run = () =>
+    task().catch((error) => logger.error(`${name} failed:`, error));
+  void run();
+  setInterval(run, DAY_MS).unref();
+}
 
 async function bootstrap() {
   try {
@@ -19,11 +28,12 @@ async function bootstrap() {
 
     if (analyticsEnabled) {
       // Keep the request log to its retention period
-      void deleteOldRequests();
-      setInterval(() => void deleteOldRequests(), DAY_MS).unref();
+      runDaily('Request log cleanup', deleteOldRequests);
     } else {
       logger.warn('ANALYTICS_KEY is not set: request analytics is off');
     }
+
+    runDaily('Demo account cleanup', deleteOldDemoAccounts);
 
     const server = app.listen(config.port, () => {
       logger.info(`API running on http://0.0.0.0:${config.port}`);

@@ -8,6 +8,7 @@ import {
 import { refreshAccessToken, setAccessToken } from '../api/auth';
 import {
   login as apiLogin,
+  loginDemo as apiLoginDemo,
   logout as apiLogout,
   register as apiRegister,
   fetchMe,
@@ -17,6 +18,7 @@ import type { User } from '../api/types';
 interface AuthContextValue {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
+  loginDemo: (key: string) => Promise<void>;
   register: (email: string, password: string, name?: string) => Promise<void>;
   authLoading: boolean;
   logout: () => Promise<void>;
@@ -86,6 +88,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(user);
   };
 
+  const loginDemo = async (key: string) => {
+    const { accessToken, user } = await apiLoginDemo(key);
+    setAccessToken(accessToken);
+    setUser(user);
+  };
+
   const register = async (email: string, password: string, name?: string) => {
     await apiRegister(email, password, name);
   };
@@ -100,6 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         login,
+        loginDemo,
         register,
         authLoading,
         logout,

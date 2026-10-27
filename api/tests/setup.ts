@@ -28,6 +28,7 @@ export async function setup() {
   process.env.RESEND_API_KEY = 'test-resend-key';
   process.env.EMAIL_FROM = 'Test <test@example.com>';
   process.env.ANALYTICS_KEY = 'a'.repeat(64);
+  process.env.DEMO_LOGIN_KEY = 'test-demo-key-at-least-32-characters';
 
   console.log('Container started:', connectionUri);
 

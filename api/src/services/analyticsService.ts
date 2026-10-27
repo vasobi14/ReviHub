@@ -19,6 +19,7 @@ const ACTIVITY_ROUTES = [
   'DELETE /reviews/:id',
   'POST /auth/register',
   'POST /auth/login',
+  'POST /auth/demo',
   'POST /auth/logout',
   'POST /auth/verify-email',
   'DELETE /admin/users/:id',

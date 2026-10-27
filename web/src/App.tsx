@@ -19,6 +19,7 @@ import { useAuth } from './context/AuthContext';
 import AdminAnalyticsPage from './pages/admin/AdminAnalyticsPage';
 import AdminPage from './pages/admin/AdminPage';
 import AdminUserPage from './pages/admin/AdminUserPage';
+import DemoPage from './pages/auth/DemoPage';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import VerifyEmailPage from './pages/auth/VerifyEmailPage';
@@ -96,6 +97,7 @@ export default function App() {
           <Route path="*" element={<NotFoundPage />} />
           <Route path="/legal" element={<LegalPage />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
+          <Route path="/demo" element={<DemoPage />} />
         </Routes>
         <Footer />
       </div>

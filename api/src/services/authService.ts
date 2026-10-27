@@ -111,6 +111,42 @@ export class AuthService {
     };
   }
 
+  // A new throwaway account for every visit through the demo link
+  async loginDemo(key: string) {
+    if (!config.demoLoginKey) {
+      throw new AppError(404, 'Demo login is off', 'NOT_FOUND');
+    }
+    const digest = (value: string) =>
+      crypto.createHash('sha256').update(value).digest();
+    if (!crypto.timingSafeEqual(digest(key), digest(config.demoLoginKey))) {
+      throw new AppError(403, 'Invalid demo link', 'INVALID_DEMO_KEY');
+    }
+
+    const user = await prisma.user.create({
+      data: {
+        email: `demo-${crypto.randomBytes(6).toString('hex')}@demo.invalid`,
+        name: 'Demo visitor',
+        passwordHash: await bcrypt.hash(
+          crypto.randomBytes(32).toString('hex'),
+          10,
+        ),
+        emailVerified: true,
+        role: 'DEMO',
+      },
+    });
+
+    return {
+      accessToken: this.signAccessToken(user),
+      refreshToken: await this.createRefreshToken(user.id),
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      },
+    };
+  }
+
   // The role travels in the token, so a role change or a deleted account
   // takes effect when the token expires (ACCESS_TOKEN_TTL)
   private signAccessToken(user: AuthUser): string {
