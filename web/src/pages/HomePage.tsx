@@ -89,6 +89,17 @@ export default function HomePage() {
   return (
     <main>
       <Header />
+      {!user && (
+        <div className={styles.intro}>
+          <h1>Reviews for movies, games and books</h1>
+          <p>
+            Open a title to read what others thought of it.{' '}
+            <Link to="/register">Sign up</Link> to rate titles from 1 to 10 and
+            write reviews. Browse the catalog, filter it by type and sort it by rating or
+            popularity. 
+          </p>
+        </div>
+      )}
       <section className={`page-section ${styles.filters}`}>
         <div className={styles.topRow}>
           <fieldset className={styles.categories} aria-label="Category">

@@ -1,3 +1,18 @@
+.intro {
+  margin: var(--space-xl) 0 0;
+}
+
+.intro h1 {
+  margin: 0 0 var(--space-sm);
+  font-size: 1.6rem;
+}
+
+.intro p {
+  max-width: 70ch;
+  margin: 0;
+  color: var(--text-muted);
+}
+
 .filters {
   display: grid;
   gap: var(--space-md);
