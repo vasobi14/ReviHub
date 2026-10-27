@@ -1,8 +1,12 @@
 # ReviHub
 
-A site for reviews of movies, games and books. Sign up, add a title and rate it from 1 to 10.
+[![CI/CD](https://github.com/vasobi14/ReviHub/actions/workflows/ci.yml/badge.svg)](https://github.com/vasobi14/ReviHub/actions/workflows/ci.yml)
 
-Live: https://vasobi.site
+A site for reviews of movies, games and books: browse the catalog, add a title with a cover and rate it from 1 to 10.
+
+**Live:** https://vasobi.site
+
+![The catalog filtered to movies, dark theme](.github/assets/catalog.webp)
 
 ## Stack
 
@@ -13,13 +17,16 @@ Live: https://vasobi.site
 
 ## Features
 
-- Catalog with search, filters and pagination, reviews with scores, poster uploads, light and dark theme.
-- Authentication: a short-lived access token kept in memory and a refresh token in an `httpOnly` cookie. The refresh token is rotated on every refresh and stored hashed in the database.
-- New accounts confirm their email with a 6-digit code. Login attempts are rate limited.
-- Admin role: moderating titles and reviews, removing users with their content.
-- Request bodies and environment variables are validated with Zod, errors go through one handler with proper HTTP statuses.
-- Integration tests for the API.
-- CI/CD: every push to `main` is tested, built into Docker images and deployed to a VPS automatically.
+- Catalog with search, filters by type, sorting (newest, release year, most reviewed, top rated) and pagination.
+- Reviews with a 1–10 score, edited and deleted by their authors. Each title shows its average rating.
+- Cover uploads, resized and stripped of metadata in the browser before they are sent.
+- Sign-up with a 6-digit email code, light and dark theme, works on phones.
+- Admin panel: user management, moderation of any title or review, and request analytics with an activity feed for the whole site and for each user.
+
+- **Auth:** a short-lived JWT access token kept in memory and a refresh token in an `httpOnly` cookie, rotated on every use and stored hashed. Login attempts are rate limited.
+- **Validation and errors:** request bodies and environment variables are checked with Zod, errors go through one handler.
+- **Tests:** integration tests run against a real Postgres started by Testcontainers.
+- **CI/CD:** every push to `main` is tested, built into Docker images and deployed to a VPS.
 
 ## Running locally
 
