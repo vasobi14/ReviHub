@@ -1,8 +1,9 @@
-const MAX_SIDE = 1200;
+const MAX_SIDE = 800;
+const QUALITY = 0.85;
 
-// Redraws the picture on a canvas before upload. The copy keeps only the
-// pixels: EXIF metadata (camera, GPS location) is gone, and a large photo
-// is scaled down. Falls back to the original file if the browser can't do it.
+// Redraws the picture on a canvas before upload. A large picture
+// is scaled down and saved as WebP, or JPEG where the browser can't encode
+// WebP. Falls back to the original file if the browser can't do either.
 export async function prepareCoverImage(file: File): Promise<File> {
   try {
     const bitmap = await createImageBitmap(file);
@@ -10,16 +11,28 @@ export async function prepareCoverImage(file: File): Promise<File> {
     const canvas = document.createElement('canvas');
     canvas.width = Math.round(bitmap.width * scale);
     canvas.height = Math.round(bitmap.height * scale);
-    canvas
-      .getContext('2d')
-      ?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const context = canvas.getContext('2d');
+    if (!context) return file;
+    // JPEG has no transparency: transparent areas would turn black
+    context.fillStyle = '#fff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
     bitmap.close();
 
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, file.type, 0.9),
-    );
-    if (!blob || blob.type !== file.type) return file;
-    return new File([blob], file.name, { type: file.type });
+    for (const [type, extension] of [
+      ['image/webp', 'webp'],
+      ['image/jpeg', 'jpg'],
+    ]) {
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, type, QUALITY),
+      );
+      // Browsers that can't encode a type silently return a PNG instead
+      if (blob?.type === type) {
+        const name = file.name.replace(/\.\w+$/, '') || 'cover';
+        return new File([blob], `${name}.${extension}`, { type });
+      }
+    }
+    return file;
   } catch {
     return file;
   }
