@@ -89,14 +89,25 @@ export default function HomePage() {
   return (
     <main>
       <Header />
-      {!user && (
+      {(!user || user.role === 'DEMO') && (
         <div className={styles.intro}>
           <h1>Reviews for movies, games and books</h1>
           <p>
             Open a title to read what others thought of it.{' '}
-            <Link to="/register">Sign up</Link> to rate titles from 1 to 10 and
-            write reviews. Browse the catalog, filter it by type and sort it by rating or
-            popularity. 
+            {user ? (
+              <>
+                You're in a demo account: rate titles from 1 to 10, write
+                reviews, edit or delete them and add new titles. The account and
+                everything in it is removed after a week.
+              </>
+            ) : (
+              <>
+                <Link to="/register">Sign up</Link> to rate titles from 1 to 10
+                and write reviews.
+              </>
+            )}{' '}
+            Browse the catalog, filter it by type and sort it by rating or
+            popularity.
           </p>
         </div>
       )}
