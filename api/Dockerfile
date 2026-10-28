@@ -10,13 +10,15 @@ RUN --mount=type=cache,target=/root/.npm,sharing=locked npm ci
 COPY . .
 RUN npm run build
 
-# Production dependencies + Prisma CLI. npm keeps prisma with --omit=dev
-# because it is an optional peer dependency of @prisma/client.
-FROM base AS migrate
-RUN --mount=type=cache,target=/root/.npm,sharing=locked npm ci --omit=dev
+# Only the Prisma CLI, from its own lock file in migrator/
+FROM node:24-alpine AS migrate
+WORKDIR /app
+COPY migrator/package*.json ./
+RUN --mount=type=cache,target=/root/.npm,sharing=locked npm ci
 COPY prisma.config.ts ./
 COPY prisma ./prisma
-CMD ["npx", "prisma", "migrate", "deploy"]
+USER node
+CMD ["./node_modules/.bin/prisma", "migrate", "deploy"]
 
 # Production dependencies only: --omit=optional also drops prisma and typescript.
 FROM base AS runtime

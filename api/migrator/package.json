@@ -1,0 +1,9 @@
+{
+  "name": "revihub-migrator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dependencies of the migrate image: only the Prisma CLI. Its version must match ../package-lock.json (checked by tests/migrator.test.ts)",
+  "dependencies": {
+    "prisma": "7.10.1"
+  }
+}
