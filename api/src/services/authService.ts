@@ -222,6 +222,13 @@ export class AuthService {
     });
   }
 
+  async deleteExpiredRefreshTokens() {
+    const { count } = await prisma.refreshToken.deleteMany({
+      where: { expiresAt: { lt: new Date() } },
+    });
+    if (count) logger.info(`Deleted ${count} expired refresh tokens`);
+  }
+
   private async saveVerificationCode(userId: number, code: string) {
     const codeHash = hashToken(code);
     await prisma.user.update({

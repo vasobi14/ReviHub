@@ -9,6 +9,7 @@ import jwt from 'jsonwebtoken';
 import app from '../src/app.js';
 import config from '../src/config/env.js';
 import { prisma } from '../src/lib/prisma.js';
+import { authService } from '../src/services/authService.js';
 import {
   clearDatabase,
   createExpiredToken,
@@ -431,5 +432,38 @@ describe('POST /auth/verify-email', () => {
 
     expect(res.status).toBe(403);
     expect(res.body.code).toBe('EMAIL_NOT_VERIFIED');
+  });
+});
+
+describe('deleteExpiredRefreshTokens', () => {
+  beforeEach(async () => {
+    await clearDatabase();
+  });
+
+  it('deletes expired tokens and keeps live and revoked ones', async () => {
+    const user = await createTestUser();
+    const day = 24 * 60 * 60 * 1000;
+    const token = (tokenHash: string, expiresIn: number, revoked = false) => ({
+      tokenHash,
+      userId: user.id,
+      expiresAt: new Date(Date.now() + expiresIn),
+      revokedAt: revoked ? new Date() : null,
+    });
+    await prisma.refreshToken.createMany({
+      data: [
+        token('expired', -day),
+        token('expired-revoked', -day, true),
+        token('live', day),
+        token('live-revoked', day, true),
+      ],
+    });
+
+    await authService.deleteExpiredRefreshTokens();
+
+    const left = await prisma.refreshToken.findMany({
+      select: { tokenHash: true },
+      orderBy: { tokenHash: 'asc' },
+    });
+    expect(left.map((t) => t.tokenHash)).toEqual(['live', 'live-revoked']);
   });
 });

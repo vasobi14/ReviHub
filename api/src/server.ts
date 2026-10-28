@@ -7,6 +7,7 @@ import {
   deleteOldRequests,
   flushRequestLog,
 } from './services/analyticsService.js';
+import { authService } from './services/authService.js';
 import { deleteOldDemoAccounts } from './services/demoService.js';
 import { logger } from './utils/logger.js';
 
@@ -34,6 +35,9 @@ async function bootstrap() {
     }
 
     runDaily('Demo account cleanup', deleteOldDemoAccounts);
+    runDaily('Refresh token cleanup', () =>
+      authService.deleteExpiredRefreshTokens(),
+    );
 
     const server = app.listen(config.port, () => {
       logger.info(`API running on http://0.0.0.0:${config.port}`);
