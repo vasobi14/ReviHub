@@ -12,7 +12,12 @@ import { TITLE_SORTS, TITLE_TYPES } from '../types/title.types.js';
 const titleSchema = z.object({
   name: z.string().max(200).min(2),
   type: z.enum(TITLE_TYPES),
-  releaseYear: z.coerce.number().int().min(1888).max(2100).optional(),
+  releaseYear: z
+    .union([
+      z.literal('').transform(() => null),
+      z.coerce.number().int().min(1888).max(2100),
+    ])
+    .optional(),
   description: z.string().max(1000).optional(),
   removeImage: z
     .enum(['true', 'false'])

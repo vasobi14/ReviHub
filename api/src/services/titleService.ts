@@ -140,7 +140,7 @@ export class TitleService {
     data: {
       name: string;
       type: TitleType;
-      releaseYear?: number;
+      releaseYear?: number | null;
       description?: string;
     },
     userId: number,
@@ -165,7 +165,7 @@ export class TitleService {
     data: {
       name: string;
       type: TitleType;
-      releaseYear?: number;
+      releaseYear?: number | null;
       description?: string;
     },
     user: AuthUser,

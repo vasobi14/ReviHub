@@ -170,7 +170,7 @@ export async function logout() {
 export function createTitle(data: {
   name: string;
   type: string;
-  releaseYear?: number;
+  releaseYear?: number | null;
   description?: string;
   image?: File;
 }) {
@@ -178,7 +178,7 @@ export function createTitle(data: {
   formData.append('name', data.name);
   formData.append('type', data.type);
   if (data.releaseYear !== undefined)
-    formData.append('releaseYear', String(data.releaseYear));
+    formData.append('releaseYear', String(data.releaseYear ?? ''));
   if (data.description !== undefined)
     formData.append('description', data.description);
   if (data.image) formData.append('image', data.image);
@@ -191,7 +191,7 @@ export function updateTitle(
   data: {
     name: string;
     type: string;
-    releaseYear?: number;
+    releaseYear?: number | null;
     description?: string;
     image?: File;
     removeImage?: boolean;
@@ -201,7 +201,7 @@ export function updateTitle(
   formData.append('name', data.name);
   formData.append('type', data.type);
   if (data.releaseYear !== undefined)
-    formData.append('releaseYear', String(data.releaseYear));
+    formData.append('releaseYear', String(data.releaseYear ?? ''));
   if (data.description !== undefined)
     formData.append('description', data.description);
   if (data.image) formData.append('image', data.image);

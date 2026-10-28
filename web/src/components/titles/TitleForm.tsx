@@ -14,7 +14,7 @@ const CATEGORY_OPTIONS = Object.entries(TITLE_TYPES).map(
 export interface TitleFormData {
   name: string;
   type: TitleType;
-  releaseYear?: number;
+  releaseYear: number | null;
   description: string;
   image?: File;
   removeImage: boolean;
@@ -79,7 +79,7 @@ export default function TitleForm({
       await onSubmit({
         name,
         type,
-        releaseYear: releaseYear ? Number(releaseYear) : undefined,
+        releaseYear: releaseYear ? Number(releaseYear) : null,
         description,
         image,
         removeImage,

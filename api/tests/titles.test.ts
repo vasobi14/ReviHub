@@ -329,6 +329,30 @@ describe('PUT /titles/:id', () => {
     expect(res.body.description).toBe('');
   });
 
+  it('clears the release year when it is sent empty and keeps it when omitted', async () => {
+    const user = await createTestUser();
+    const token = createToken(user.id);
+    const title = await createTestTitle({
+      name: 'Title with a year',
+      type: 'movie',
+      releaseYear: 1999,
+      createdById: user.id,
+    });
+    const update = () =>
+      request(app)
+        .put(`/titles/${title.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .field('name', title.name)
+        .field('type', title.type);
+
+    const kept = await update();
+    expect(kept.body.releaseYear).toBe(1999);
+
+    const cleared = await update().field('releaseYear', '');
+    expect(cleared.status).toBe(200);
+    expect(cleared.body.releaseYear).toBeNull();
+  });
+
   it('returns 404 for non-existent title', async () => {
     const user = await createTestUser();
     const token = createToken(user.id);
