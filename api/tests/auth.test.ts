@@ -163,6 +163,7 @@ describe('POST /auth/login', () => {
       .send({ email: 'user@test.com', password: 'wrong123' });
 
     expect(res.status).toBe(401);
+    expect(res.body.code).toBe('INVALID_CREDENTIALS');
   });
 
   it('returns 401 for non-existent user', async () => {
@@ -171,6 +172,7 @@ describe('POST /auth/login', () => {
       .send({ email: 'ghost@test.com', password: 'password123' });
 
     expect(res.status).toBe(401);
+    expect(res.body.code).toBe('INVALID_CREDENTIALS');
   });
 });
 

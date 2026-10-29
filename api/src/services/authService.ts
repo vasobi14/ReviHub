@@ -85,7 +85,11 @@ export class AuthService {
   async login(email: string, password: string) {
     const user = await this.validateUser(email, password);
     if (!user) {
-      throw new AppError(401, 'Invalid email or password');
+      throw new AppError(
+        401,
+        'Invalid email or password',
+        'INVALID_CREDENTIALS',
+      );
     }
 
     if (!user.emailVerified) {
