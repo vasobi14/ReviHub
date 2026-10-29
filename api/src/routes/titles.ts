@@ -27,8 +27,13 @@ const titleSchema = z.object({
 
 const querySchema = z.object({
   type: z.enum(TITLE_TYPES).optional(),
-  q: z.string().max(100).optional(),
-  page: z.coerce.number().int().positive().max(1000).default(1),
+  q: z.string().max(100, 'Search query is too long').optional(),
+  page: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(1000, 'Page is out of range')
+    .default(1),
   sort: z.enum(TITLE_SORTS).default('new'),
 });
 

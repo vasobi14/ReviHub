@@ -6,12 +6,20 @@ import { reviewService } from '../services/reviewService.js';
 const reviewSchema = z.object({
   titleId: z.number().int().positive(),
   score: z.coerce.number().int().min(1).max(10),
-  text: z.string().max(2000).optional(),
+  text: z
+    .string()
+    .max(2000, 'Review must be at most 2000 characters')
+    .optional(),
 });
 
 const querySchema = z.object({
   titleId: z.coerce.number().int().positive().optional(),
-  page: z.coerce.number().int().positive().max(100).default(1),
+  page: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(1000, 'Page is out of range')
+    .default(1),
   excludeUserId: z.coerce.number().int().positive().optional(),
 });
 
@@ -21,7 +29,10 @@ const mineQuerySchema = z.object({
 
 const updateReviewSchema = z.object({
   score: z.coerce.number().int().min(1).max(10),
-  text: z.string().max(2000).optional(),
+  text: z
+    .string()
+    .max(2000, 'Review must be at most 2000 characters')
+    .optional(),
 });
 
 const paramSchema = z.coerce.number().int().positive();

@@ -16,14 +16,17 @@ const registerSchema = z.object({
   email: z.email(),
   password: z
     .string()
-    .min(8)
+    .min(8, 'Password must be at least 8 characters')
     .refine((value) => Buffer.byteLength(value) <= 72, 'Password is too long'),
-  name: z.string().max(50).optional(),
+  name: z.string().max(50, 'Name must be at most 50 characters').optional(),
 });
 
 const loginSchema = z.object({
   email: z.email(),
-  password: z.string().min(8).max(100),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .max(100, 'Password is too long'),
 });
 
 const verifyEmailSchema = z.object({

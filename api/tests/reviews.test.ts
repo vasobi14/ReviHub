@@ -333,6 +333,18 @@ describe('GET /reviews pagination', () => {
     expect(page2.body.items).toHaveLength(page2.body.pageSize);
   });
 
+  it('rejects an absurd page before it reaches the database', async () => {
+    const title = await createTestTitle();
+    const user = await createTestUser();
+    await createReview({ titleId: title.id, userId: user.id, score: 7 });
+
+    const res = await request(app).get('/reviews?page=999999999');
+
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('VALIDATION_ERROR');
+    expect(res.body.errors.page).toBe('Page is out of range');
+  });
+
   it('returns 400 for invalid page', async () => {
     const res = await request(app).get('/reviews?page=abc');
 

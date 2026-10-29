@@ -595,6 +595,16 @@ describe('GET /titles pagination', () => {
     expect(page1Ids).not.toEqual(expect.arrayContaining(page2Ids));
   });
 
+  it('rejects an absurd page before it reaches the database', async () => {
+    await createTestTitle({ name: 'Only one' });
+
+    const res = await request(app).get('/titles?page=999999999');
+
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('VALIDATION_ERROR');
+    expect(res.body.errors.page).toBe('Page is out of range');
+  });
+
   it('returns titles sorted by createdAt desc', async () => {
     await createTestTitle({ name: 'First' });
     await new Promise((r) => setTimeout(r, 5));
