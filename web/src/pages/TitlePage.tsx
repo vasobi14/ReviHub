@@ -1,5 +1,5 @@
 import { ArrowLeft, Star } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import { deleteTitle, updateTitle } from '../api/client';
 import { Header } from '../components/layout/Header';
@@ -27,7 +27,8 @@ export default function TitlePage() {
     (location.state as { from?: string } | null)?.from ?? '/';
   const { user, adminMode } = useAuth();
   const { id } = useParams<{ id: string }>();
-  const titleId = id ? Number(id) : null;
+  const parsedId = Number(id);
+  const titleId = Number.isInteger(parsedId) && parsedId > 0 ? parsedId : null;
   const { data: title, error, mutate } = useTitle(titleId);
   const {
     reviews,
@@ -51,6 +52,12 @@ export default function TitlePage() {
     void mutate();
   };
 
+  useEffect(() => {
+    if (totalPages > 0 && reviewsPage > totalPages) {
+      setReviewsPage(totalPages);
+    }
+  }, [totalPages, reviewsPage]);
+
   const canEdit = user?.id === title?.createdById || adminMode;
   const handleBack = () => navigate(previousLocation, { replace: true });
   const handleDeleteTitle = async () => {
@@ -68,6 +75,19 @@ export default function TitlePage() {
       setDeleting(false);
     }
   };
+
+  if (titleId === null) {
+    return (
+      <main>
+        <Header />
+        <button type="button" className="button-text" onClick={handleBack}>
+          <ArrowLeft size={16} aria-hidden="true" />
+          All titles
+        </button>
+        <p>Title not found.</p>
+      </main>
+    );
+  }
 
   if (error) {
     const status =

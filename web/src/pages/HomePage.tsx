@@ -67,20 +67,31 @@ export default function HomePage() {
     return () => clearTimeout(timeout);
   }, [titleFilter, searchQuery, setParam]);
 
-  const handlePageChange = (newPage: number) => {
-    setSearchParams(
-      (current) => {
-        const next = new URLSearchParams(current);
-        if (newPage === 1) next.delete('page');
-        else next.set('page', String(newPage));
-        return next;
-      },
-      { replace: true },
-    );
-  };
+  const handlePageChange = useCallback(
+    (newPage: number) => {
+      setSearchParams(
+        (current) => {
+          const next = new URLSearchParams(current);
+          if (newPage === 1) next.delete('page');
+          else next.set('page', String(newPage));
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
 
   const { titles, total, totalPages, currentPage, error, mutate, isLoading } =
     useTitles(typeFilter, searchQuery, page, sort);
+
+  // After filtering or deletion the result can get shorter: never stay on a
+  // page number that no longer exists
+  useEffect(() => {
+    if (totalPages > 0 && page > totalPages) {
+      handlePageChange(totalPages);
+    }
+  }, [totalPages, page, handlePageChange]);
 
   const canEdit = !!user?.id;
 
@@ -145,6 +156,7 @@ export default function HomePage() {
             onChange={(e) => setTitleFilter(e.target.value)}
             placeholder="Search by name..."
             aria-label="Search by name"
+            maxLength={100}
             className={styles.search}
           />
           <SegmentedControl

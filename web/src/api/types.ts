@@ -27,21 +27,23 @@ export type TitleType = 'movie' | 'game' | 'book';
 
 export type TitleSort = 'new' | 'year' | 'popular' | 'rating';
 
-export interface Title {
+// GET /titles
+export interface TitleListItem {
   id: number;
   name: string;
   type: TitleType;
   releaseYear: number | null;
   description: string | null;
-  reviews: Review[];
-  createdById: number;
   imageUrl: string | null;
   averageRating: number | null;
   reviewCount: number;
-  createdAt: string;
 }
 
-export type TitleListItem = Omit<Title, 'reviews'>;
+// GET /titles/:id
+export interface Title extends TitleListItem {
+  createdById: number;
+  createdAt: string;
+}
 
 export interface PaginatedResponse<T> {
   items: T[];

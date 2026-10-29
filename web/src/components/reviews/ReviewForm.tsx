@@ -45,6 +45,7 @@ export default function ReviewForm({
           placeholder="What did you think? (optional)"
           value={text}
           onChange={(e) => setText(e.target.value)}
+          maxLength={2000}
         />
       </label>
       {error && <div className="error-message">{error}</div>}

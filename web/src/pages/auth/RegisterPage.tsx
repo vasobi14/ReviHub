@@ -18,6 +18,12 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
     setError('');
+
+    if (new TextEncoder().encode(password).length > 72) {
+      setError('Password is too long (max 72 bytes).');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -62,6 +68,8 @@ export default function RegisterPage() {
             autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            minLength={8}
+            maxLength={72}
             required
           />
         </label>
@@ -72,6 +80,7 @@ export default function RegisterPage() {
             autoComplete="nickname"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            maxLength={50}
           />
           <span className="field-hint">Optional, shown with your reviews</span>
         </label>

@@ -11,8 +11,9 @@ export function useReviews(
   excludeUserId?: number,
 ) {
   const query = useMemo(() => {
-    const params = [`page=${page}`];
-    if (titleId) params.push(`titleId=${titleId}`);
+    if (!titleId) return null;
+
+    const params = [`page=${page}`, `titleId=${titleId}`];
     if (excludeUserId) params.push(`excludeUserId=${excludeUserId}`);
     return `/reviews?${params.join('&')}`;
   }, [titleId, page, excludeUserId]);

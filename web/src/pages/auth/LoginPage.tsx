@@ -72,6 +72,8 @@ export default function LoginPage() {
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            minLength={8}
+            maxLength={100}
             required
           />
         </label>

@@ -2,9 +2,21 @@ import { clearAccessToken, getAccessToken, refreshAccessToken } from './auth';
 
 const API_URL = '/api';
 
+const REFRESHABLE_CODES = new Set([
+  'TOKEN_EXPIRED',
+  'INVALID_TOKEN',
+  'AUTH_HEADER_MISSING',
+]);
+
+function isRefreshable(data: unknown): boolean {
+  const code = (data as { code?: string } | null)?.code;
+  return code !== undefined && REFRESHABLE_CODES.has(code);
+}
+
 interface ApiError extends Error {
   status?: number;
   code?: string;
+  fieldErrors?: Record<string, string>;
 }
 
 async function parseBody(res: Response): Promise<unknown> {
@@ -15,6 +27,22 @@ async function parseBody(res: Response): Promise<unknown> {
   } catch {
     return null;
   }
+}
+
+function toApiError(res: Response, data: unknown): ApiError {
+  const payload = data as {
+    message?: string;
+    code?: string;
+    errors?: Record<string, string>;
+  } | null;
+
+  const error = new Error(
+    payload?.message || res.statusText || 'Request failed',
+  ) as ApiError;
+  error.status = res.status;
+  error.code = payload?.code;
+  error.fieldErrors = payload?.errors;
+  return error;
 }
 
 async function doFetch(
@@ -42,76 +70,44 @@ async function doFetch(
   });
 }
 
-export async function apiFetch<T>(
-  path: string,
-  options: RequestInit = {},
-): Promise<T> {
+async function request<T>(path: string, options: RequestInit): Promise<T> {
   let res = await doFetch(path, options, true);
+  let data = await parseBody(res);
 
-  if (res.status === 401) {
+  if (res.status === 401 && isRefreshable(data)) {
     const newToken = await refreshAccessToken();
     if (newToken) {
       res = await doFetch(path, options, true);
+      data = await parseBody(res);
     } else {
       clearAccessToken();
     }
   }
 
-  const data = await parseBody(res);
-
   if (!res.ok) {
-    const payload = data as { message?: string; code?: string } | null;
-    const error = new Error(
-      payload?.message || res.statusText || 'Request failed',
-    ) as ApiError;
-    error.status = res.status;
-    error.code = payload?.code;
-    throw error;
+    throw toApiError(res, data);
   }
 
   return data as T;
 }
 
-export async function apiUpload<T>(
+export function apiFetch<T>(
+  path: string,
+  options: RequestInit = {},
+): Promise<T> {
+  return request<T>(path, options);
+}
+
+export function apiUpload<T>(
   path: string,
   formData: FormData,
   options: RequestInit = {},
 ): Promise<T> {
-  let res = await doFetch(
-    path,
-    { ...options, method: options.method ?? 'POST', body: formData },
-    true,
-  );
-
-  if (res.status === 401) {
-    const newToken = await refreshAccessToken();
-    if (newToken) {
-      res = await doFetch(
-        path,
-        { ...options, method: options.method ?? 'POST', body: formData },
-        true,
-      );
-    } else {
-      clearAccessToken();
-    }
-  }
-
-  const data = await parseBody(res);
-
-  if (!res.ok) {
-    const payload = data as {
-      message?: string;
-      code?: string;
-    } | null;
-    const error = new Error(
-      payload?.message || res.statusText || 'Request failed',
-    ) as ApiError;
-    error.status = res.status;
-    error.code = payload?.code;
-    throw error;
-  }
-
-  return data as T;
+  return request<T>(path, {
+    ...options,
+    method: options.method ?? 'POST',
+    body: formData,
+  });
 }
 
 export async function login(email: string, password: string) {
