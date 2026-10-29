@@ -26,3 +26,4 @@ build/
 
 prisma/*.db
 prisma/*.db-journal
+opencode.json
