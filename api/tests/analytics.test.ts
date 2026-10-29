@@ -167,7 +167,7 @@ describe('Admin analytics', () => {
     const feed = await api.get(`/admin/analytics/feed?userId=${user.id}`);
 
     expect(res.status).toBe(200);
-    expect(res.body.requests).toBe(1);
+    expect(res.body.requests).toBe(2);
     const anonymous = feed.body.entries.find(
       (entry: { userId: number | null }) => entry.userId === null,
     );

@@ -248,13 +248,15 @@ export class AnalyticsService {
       throw new AppError(404, 'User not found', 'NOT_FOUND');
     }
 
+    const where = await requestsOf(userId);
+
     const [last, requests] = await Promise.all([
       prisma.requestLog.findFirst({
-        where: { userId },
+        where,
         orderBy: { id: 'desc' },
         select: { createdAt: true },
       }),
-      prisma.requestLog.count({ where: { userId } }),
+      prisma.requestLog.count({ where }),
     ]);
 
     return {
