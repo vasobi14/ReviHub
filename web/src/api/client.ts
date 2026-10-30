@@ -1,4 +1,9 @@
-import { clearAccessToken, getAccessToken, refreshAccessToken } from './auth';
+import {
+  clearAccessToken,
+  getAccessToken,
+  logoutAcrossTabs,
+  refreshAccessToken,
+} from './auth';
 
 const API_URL = '/api';
 
@@ -160,7 +165,7 @@ export async function logout() {
   try {
     await apiFetch('/auth/logout', { method: 'POST' });
   } catch {}
-  clearAccessToken();
+  logoutAcrossTabs();
 }
 
 export function createTitle(data: {

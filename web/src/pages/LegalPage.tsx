@@ -58,9 +58,9 @@ export default function LegalPage() {
           </p>
           <p>
             Requests to the site are logged for 90 days for security and usage
-            statistics: the time, the page, your browser and your IP address,
-            which is stored encrypted and is visible only to the site
-            administrator.
+            statistics: the time, page path, your
+            browser and your IP address, which is stored encrypted and is
+            visible only to the site administrator.
           </p>
           <p>
             To delete your account and everything you posted, email{' '}

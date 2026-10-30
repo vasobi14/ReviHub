@@ -27,10 +27,8 @@ async function bootstrap() {
     await prisma.$connect();
     logger.info('Database connected');
 
-    if (analyticsEnabled) {
-      // Keep the request log to its retention period
-      runDaily('Request log cleanup', deleteOldRequests);
-    } else {
+    runDaily('Request log cleanup', deleteOldRequests);
+    if (!analyticsEnabled) {
       logger.warn('ANALYTICS_KEY is not set: request analytics is off');
     }
 

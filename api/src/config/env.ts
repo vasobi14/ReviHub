@@ -20,13 +20,18 @@ const envSchema = z.object({
   RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY is required'),
   EMAIL_FROM: z.string().min(1, 'EMAIL_FROM is required'),
   ANALYTICS_KEY: z
-    .string()
-    .regex(/^[0-9a-f]{64}$/i, 'ANALYTICS_KEY must be 64 hex characters')
-    .optional(),
+    .preprocess(
+      (value) => (value === '' ? undefined : value),
+      z
+        .string()
+        .regex(/^[0-9a-f]{64}$/i, 'ANALYTICS_KEY must be 64 hex characters')
+        .optional(),
+    ),
   DEMO_LOGIN_KEY: z
-    .string()
-    .min(32, 'DEMO_LOGIN_KEY must be at least 32 characters')
-    .optional(),
+    .preprocess(
+      (value) => (value === '' ? undefined : value),
+      z.string().min(32, 'DEMO_LOGIN_KEY must be at least 32 characters').optional(),
+    ),
 });
 
 const env = envSchema.parse(process.env);

@@ -36,7 +36,7 @@ export const requestLog: RequestHandler = (req, res, next) => {
   res.on('finish', () => {
     recordRequest({
       method: req.method,
-      path: req.originalUrl,
+      path: req.path,
       route: req.route
         ? `${req.baseUrl}${req.route.path}`.replace(/(.)\/$/, '$1')
         : null,
